@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   camera: {
     width: 300,
-    height: 400,
+    height: 300,
   },
   menu: {
     flexDirection: "row",
