@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, StyleSheet, Button, ActivityIndicator } from "react-native";
-import { CameraView, Camera } from "expo-camera";
+import React, { useState, useEffect } from 'react';
+import { Text, View, StyleSheet, Button, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { CameraView, Camera } from 'expo-camera';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function App() {
+const Tab = createBottomTabNavigator();
+
+function QRScannerScreen() {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [scannedData, setScannedData] = useState('');
 
   useEffect(() => {
     const initializeApp = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === "granted");
+      setHasPermission(status === 'granted');
       setShowSplash(false);
     };
 
@@ -19,6 +25,7 @@ export default function App() {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
+    setScannedData(`Type: ${type}\nData: ${data}`);
     alert(`Bar code with type ${type} and data ${data} has been scanned!`);
   };
 
@@ -39,38 +46,88 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      {/* Top Banner */}
       <View style={styles.banner}>
         <Text style={styles.headerText}>SafeQR</Text>
       </View>
-
-      {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
-
-      {/* Camera Container */}
       <View style={styles.cameraContainer}>
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr", "pdf417"],
-          }}
+          barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
           style={styles.camera}
         />
       </View>
-
-      {/* Scan Again Button */}
-      {scanned && (
-        <Button
-          title={"Tap to Scan Again"}
-          onPress={() => setScanned(false)}
-        />
+      {scannedData !== '' && (
+        <View style={styles.dataBox}>
+          <Text style={styles.dataText}>{scannedData}</Text>
+        </View>
       )}
-
-      {/* Bottom Menu */}
+      {scanned && (
+        <Button title={"Tap to Scan Again"} onPress={() => setScanned(false)} />
+      )}
       <View style={styles.menu}>
         {/* Your existing menu items */}
       </View>
     </View>
+  );
+}
+
+function HistoryScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.welcomeText}>History Screen</Text>
+    </View>
+  );
+}
+
+function SettingsScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.welcomeText}>Settings Screen</Text>
+    </View>
+  );
+}
+
+function ProfileScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.welcomeText}>Profile Screen</Text>
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName;
+
+            if (route.name === 'QR Scanner') {
+              iconName = 'qr-code-outline';
+            } else if (route.name === 'History') {
+              iconName = 'time-outline';
+            } else if (route.name === 'Settings') {
+              iconName = 'settings-outline';
+            } else if (route.name === 'Profile') {
+              iconName = 'person-outline';
+            }
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+        })}
+        tabBarOptions={{
+          activeTintColor: 'tomato',
+          inactiveTintColor: 'gray',
+        }}
+      >
+        <Tab.Screen name="QR Scanner" component={QRScannerScreen} />
+        <Tab.Screen name="History" component={HistoryScreen} />
+        <Tab.Screen name="Settings" component={SettingsScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -109,6 +166,18 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
   },
+  dataBox: {
+    marginVertical: 10,
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dataText: {
+    fontSize: 16,
+    color: "#000",
+  },
   menu: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -116,5 +185,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff69b4", // pink background
     paddingVertical: 10,
   },
-  // Your existing menu item styles
 });
