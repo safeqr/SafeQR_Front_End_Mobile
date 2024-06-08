@@ -4,36 +4,96 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios'; // Import Axios for HTTP requests
 
 // Create a Context for QR code data
 const QRCodeContext = createContext();
 
 const Tab = createBottomTabNavigator();
 
+// Component for QR Scanner Screen
 function QRScannerScreen() {
   const { qrCodes, setQrCodes } = useContext(QRCodeContext); // Access context
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-  const [scannedData, setScannedData] = useState('');
+  const [hasPermission, setHasPermission] = useState(null); // State for camera permission
+  const [scanned, setScanned] = useState(false); // State for scanned status
+  const [showSplash, setShowSplash] = useState(true); // State for splash screen
+  const [scannedData, setScannedData] = useState(''); // State for scanned data
+  const [scanResult, setScanResult] = useState(null); // State for VirusTotal scan result
 
   useEffect(() => {
     const initializeApp = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-      setShowSplash(false); // Hide splash screen after initializing
+      const { status } = await Camera.requestCameraPermissionsAsync(); // Request camera permissions
+      setHasPermission(status === 'granted'); // Set permission status
+      setShowSplash(false); // Hide splash screen
     };
 
-    initializeApp();
+    initializeApp(); // Initialize app
   }, []);
 
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true); // Mark as scanned
-    const newScannedData = `Type: ${type}\nData: ${data}`;
-    setScannedData(newScannedData); // Save scanned data
-    setQrCodes([...qrCodes, newScannedData]); // Add scanned data to history
-    alert(`Bar code with type ${type} and data ${data} has been scanned!`); // Show an alert
+// Function to handle barcode scanned event
+const handleBarCodeScanned = async ({ type, data }) => {
+  setScanned(true); // Mark as scanned
+
+  // Determine the type of data (URL, text, or just numbers)
+  let dataType;
+  if (/^(http|https):\/\//.test(data)) {
+    dataType = 'URL';
+  } else if (/^[0-9]+$/.test(data)) {
+    dataType = 'Numbers';
+  } else {
+    dataType = 'Text';
+  }
+
+  // Construct the scanned data with the data type
+  let newScannedData = `Type: ${dataType}\nData: ${data}`; // Initialize with type and data
+
+  try {
+    const scanId = await scanWithVirusTotal(data); // Send data to VirusTotal and get scan ID
+    const positive = await getScanResult(scanId); // Get scan result and extract positive score
+    newScannedData += `\nScore: ${positive}`; // Append positive score to newScannedData
+  } catch (error) {
+    console.error('Error handling barcode scan:', error); // Handle error
+  }
+
+  setScannedData(newScannedData); // Save scanned data
+  setQrCodes([...qrCodes, newScannedData]); // Add scanned data to history
+};
+
+// Function to send data to VirusTotal and get the scan ID
+const scanWithVirusTotal = async (data) => {
+  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // Replace with your VirusTotal API key
+  const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
+  const params = {
+    apikey: apiKey,
+    url: data
   };
+
+  try {
+    const response = await axios.post(url, null, { params }); // Send URL scan request
+    return response.data.scan_id; // Return scan ID
+  } catch (error) {
+    console.error('Error scanning with VirusTotal:', error); // Handle error
+    throw error; // Propagate error
+  }
+};
+
+// Function to get scan result from VirusTotal and return the positive score
+const getScanResult = async (scanId) => {
+  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // Replace with your VirusTotal API key
+  const url = 'https://www.virustotal.com/vtapi/v2/url/report';
+  const params = {
+    apikey: apiKey,
+    resource: scanId
+  };
+
+  try {
+    const response = await axios.get(url, { params }); // Get scan result
+    return response.data.positives; // Return positive score
+  } catch (error) {
+    console.error('Error getting scan result:', error); // Handle error
+    throw error; // Propagate error
+  }
+};
 
   if (showSplash) {
     return (
@@ -67,21 +127,19 @@ function QRScannerScreen() {
           style={styles.camera} // Apply styles
         />
       </View>
-      
-      {/* Display scanned data */}
-      {scannedData !== '' && (
+   {/* Display scanned data */}
+   {scannedData !== '' && (
         <View style={styles.dataBox}>
           <Text style={styles.dataText}>{scannedData}</Text>
+          {scanResult && <Text style={styles.dataText}>{JSON.stringify(scanResult)}</Text>}
         </View>
       )}
-
       {/* Button to scan again */}
       {scanned && (
         <TouchableOpacity style={styles.button} onPress={() => setScanned(false)}>
           <Text style={styles.buttonText}>Tap to Scan Again</Text>
         </TouchableOpacity>
       )}
-
       {/* Menu (Placeholder for additional menu items) */}
       <View style={styles.menu}>
         {/* Your existing menu items */}
@@ -90,6 +148,7 @@ function QRScannerScreen() {
   );
 }
 
+// Component for History Screen
 function HistoryScreen() {
   const { qrCodes } = useContext(QRCodeContext); // Access context
 
@@ -97,26 +156,38 @@ function HistoryScreen() {
     <View style={styles.container}>
       <Text style={styles.welcomeText}>History Screen</Text>
       <FlatList
-        data={qrCodes}
+        data={qrCodes} // Data for FlatList
         renderItem={({ item }) => (
           <View style={styles.dataBox}>
             <Text style={styles.dataText}>{item}</Text>
           </View>
         )}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item, index) => index.toString()} // Key extractor for FlatList
       />
     </View>
   );
 }
 
+// Component for Settings Screen
 function SettingsScreen() {
+  const { setQrCodes } = useContext(QRCodeContext); // Access context
+
+  // Function to clear history
+  const clearHistory = () => {
+    setQrCodes([]);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Settings Screen</Text>
+      <TouchableOpacity style={styles.button} onPress={clearHistory}>
+        <Text style={styles.buttonText}>Clear History</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
+// Component for Profile Screen
 function ProfileScreen() {
   return (
     <View style={styles.container}>
@@ -234,5 +305,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ff69b4", // pink background
     paddingVertical: 10,
+  },
+
+
+  // Additional styles for green and red boxes
+  greenBox: {
+    backgroundColor: '#00FF00', // Green color
+  },
+  redBox: {
+    backgroundColor: '#FF0000', // Red color
   },
 });
