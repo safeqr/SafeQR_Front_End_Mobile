@@ -250,7 +250,7 @@ export default function App() {
   return (
     <QRCodeContext.Provider value={{ qrCodes, setQrCodes }}>
       <NavigationContainer>
-        <Tab.Navigator tabBar={props => <CustomTabBar {...props} />}>
+        <Tab.Navigator initialRouteName="QR Scanner" tabBar={props => <CustomTabBar {...props} />}>
           <Tab.Screen name="History" component={HistoryScreen} />
           <Tab.Screen name="QR Scanner" component={QRScannerScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
@@ -259,6 +259,8 @@ export default function App() {
     </QRCodeContext.Provider>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
