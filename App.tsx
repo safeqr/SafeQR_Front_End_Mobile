@@ -2,9 +2,10 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Text, View, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CameraView, Camera } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios'; // Import Axios for HTTP requests
+import { CameraView, Camera } from 'expo-camera'; // 
+import { Ionicons } from '@expo/vector-icons'; // The icons used in the navigation bar
+import axios from 'axios'; // Import Axios for HTTP requests for the VT API call
+
 
 // Create a Context for QR code data
 const QRCodeContext = createContext();
@@ -31,69 +32,69 @@ function QRScannerScreen() {
   }, []);
 
 // Function to handle barcode scanned event
-const handleBarCodeScanned = async ({ type, data }) => {
+  const handleBarCodeScanned = async ({ type, data }) => {
   setScanned(true); // Mark as scanned
 
   // Determine the type of data (URL, text, or just numbers)
-  let dataType;
-  if (/^(http|https):\/\//.test(data)) {
-    dataType = 'URL';
-  } else if (/^[0-9]+$/.test(data)) {
-    dataType = 'Numbers';
-  } else {
-    dataType = 'Text';
-  }
+    let dataType;
+    if (/^(http|https):\/\//.test(data)) {
+      dataType = 'URL';
+    } else if (/^[0-9]+$/.test(data)) {
+      dataType = 'Numbers';
+    } else {
+      dataType = 'Text';
+    }
 
   // Construct the scanned data with the data type
   let newScannedData = `Type: ${dataType}\nData: ${data}`; // Initialize with type and data
 
-  try {
+    try {
     const scanId = await scanWithVirusTotal(data); // Send data to VirusTotal and get scan ID
     const positive = await getScanResult(scanId); // Get scan result and extract positive score
     newScannedData += `\nScore: ${positive}`; // Append positive score to newScannedData
-  } catch (error) {
+    } catch (error) {
     console.error('Error handling barcode scan:', error); // Handle error
-  }
+    }
 
   setScannedData(newScannedData); // Save scanned data
   setQrCodes([...qrCodes, newScannedData]); // Add scanned data to history
-};
+  };
 
 // Function to send data to VirusTotal and get the scan ID
-const scanWithVirusTotal = async (data) => {
+  const scanWithVirusTotal = async (data) => {
   const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // Replace with your VirusTotal API key
-  const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
-  const params = {
-    apikey: apiKey,
-    url: data
-  };
+    const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
+    const params = {
+      apikey: apiKey,
+      url: data
+    };
 
-  try {
+    try {
     const response = await axios.post(url, null, { params }); // Send URL scan request
     return response.data.scan_id; // Return scan ID
-  } catch (error) {
+    } catch (error) {
     console.error('Error scanning with VirusTotal:', error); // Handle error
     throw error; // Propagate error
-  }
-};
-
-// Function to get scan result from VirusTotal and return the positive score
-const getScanResult = async (scanId) => {
-  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // Replace with your VirusTotal API key
-  const url = 'https://www.virustotal.com/vtapi/v2/url/report';
-  const params = {
-    apikey: apiKey,
-    resource: scanId
+    }
   };
 
-  try {
+// Function to get scan result from VirusTotal and return the positive score
+  const getScanResult = async (scanId) => {
+  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // Replace with your VirusTotal API key
+    const url = 'https://www.virustotal.com/vtapi/v2/url/report';
+    const params = {
+      apikey: apiKey,
+      resource: scanId
+    };
+
+    try {
     const response = await axios.get(url, { params }); // Get scan result
     return response.data.positives; // Return positive score
-  } catch (error) {
+    } catch (error) {
     console.error('Error getting scan result:', error); // Handle error
     throw error; // Propagate error
-  }
-};
+    }
+  };
 
   if (showSplash) {
     return (
@@ -128,7 +129,7 @@ const getScanResult = async (scanId) => {
         />
       </View>
    {/* Display scanned data */}
-   {scannedData !== '' && (
+      {scannedData !== '' && (
         <View style={styles.dataBox}>
           <Text style={styles.dataText}>{scannedData}</Text>
           {scanResult && <Text style={styles.dataText}>{JSON.stringify(scanResult)}</Text>}
@@ -242,37 +243,38 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fa5da2', 
+    backgroundColor: '#f8f0fc',
+    padding: 20,
   },
   splashContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f0fc", // light purple background
+    backgroundColor: "#f8f0fc",
   },
-  banner: {
-    backgroundColor: "#333", // dark background
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  headerText: {
-    color: "white",
-    fontSize: 24,
-  },
-  welcomeText: {
+  scanText: {
     textAlign: "center",
-    fontSize: 20,
-    marginVertical: 10, // Adjusted margin
-    color: "white", 
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#ff69b4",
+    marginVertical: 10,
+  },
+  instructionText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#000",
+    marginBottom: 20,
   },
   cameraContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 10,
+    overflow: "hidden",
   },
   camera: {
-    width: 300,
-    height: 300,
+    width: "80%",
+    height: "60%",
   },
   button: {
     backgroundColor: '#333',
@@ -299,20 +301,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
   },
-  menu: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    backgroundColor: "#ff69b4", // pink background
-    paddingVertical: 10,
-  },
-
-
-  // Additional styles for green and red boxes
-  greenBox: {
-    backgroundColor: '#00FF00', // Green color
-  },
-  redBox: {
-    backgroundColor: '#FF0000', // Red color
+  welcomeText: {
+    textAlign: "center",
+    fontSize: 20,
+    marginVertical: 10,
+    color: "black", 
   },
 });
