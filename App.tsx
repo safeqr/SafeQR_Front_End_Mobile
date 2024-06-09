@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Text, View, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CameraView, Camera } from 'expo-camera'; // The icons used in the navigation bar
+import { CameraView, Camera } from 'expo-camera'; 
 import { Ionicons } from '@expo/vector-icons'; // Import Axios for HTTP requests for the VT API call
 import axios from 'axios';
 // Create a Context for QR code data
@@ -63,7 +63,7 @@ const QRScannerScreen: React.FC = () => {
 
   // Function to send data to VirusTotal and get the scan ID
   const scanWithVirusTotal = async (data: any) => {
-    const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e'; // 4/min , 500/day
+    const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251er'; // 4/min , 500/day
     const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
     const params = {
       apikey: apiKey,
@@ -83,7 +83,7 @@ const QRScannerScreen: React.FC = () => {
   // Get the full list of scanned result based on scanID from
   // response above, Only want response.data.positive
   const getScanResult = async (scanId: Int32Array) => {
-    const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e';
+    const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251er';
     const url = 'https://www.virustotal.com/vtapi/v2/url/report';
     const params = {
       apikey: apiKey,
@@ -93,7 +93,7 @@ const QRScannerScreen: React.FC = () => {
     // The axios to handle URL stuff
     try {
       const response = await axios.get(url, { params });
-      return response.data.positives;  // Reture the value of positive:
+      return response.data.positives;  // onlt
     } catch (error) {
       console.error('Error getting scan result:', error);
       throw error;
@@ -118,16 +118,10 @@ const QRScannerScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-
-       {/* Header banner */}
       <View style={styles.banner}>
         <Text style={styles.headerText}>SafeQR</Text>
       </View>
-
-      {/* Welcome message */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
-
-      {/* Camera view container */}
       <View style={styles.cameraContainer}>
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleQRCodeSanned}
@@ -135,8 +129,6 @@ const QRScannerScreen: React.FC = () => {
           style={styles.camera}
         />
       </View>
-
-      {/* Display scanned data */}
       {scannedData !== '' && (
         <View style={styles.dataBox}>
           <Text style={styles.dataText}>{scannedData}</Text>
@@ -147,8 +139,6 @@ const QRScannerScreen: React.FC = () => {
   );
 };
 
-
-// Component for History Screen
 function HistoryScreen() {
   const { qrCodes } = useContext(QRCodeContext);
 
@@ -156,24 +146,24 @@ function HistoryScreen() {
     <View style={styles.container}>
       <Text style={styles.welcomeText}>History Screen</Text>
       <FlatList
-        data={qrCodes} // Data for FlatList
+        data={qrCodes}
         renderItem={({ item }) => (
           <View style={styles.dataBox}>
             <Text style={styles.dataText}>{item}</Text>
           </View>
         )}
-        keyExtractor={(item, index) => index.toString()} // Key extractor for FlatList
+        keyExtractor={(item, index) => index.toString()}
       />
     </View>
   );
 }
 
-
-// Component for Settings Screen
 function SettingsScreen() {
-  const { setQrCodes } = useContext(QRCodeContext); // Access context
+  const { setQrCodes } = useContext(QRCodeContext);
 
-  const clearHistory = () => {setQrCodes([]);}; // To clear History
+  const clearHistory = () => {
+    setQrCodes([]);
+  };
 
   return (
     <View style={styles.container}>
@@ -185,7 +175,6 @@ function SettingsScreen() {
   );
 }
 
-// Component for Profile Screen
 function ProfileScreen() {
   return (
     <View style={styles.container}>
@@ -226,10 +215,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           });
         };
 
-        // Set different icons for each tab
-        const iconName = route.name === 'QR Scanner' ? 'camera' 
-        : route.name === 'History' ? 'time' 
-        : route.name === 'Settings' ? 'settings' : 'person';
+        const iconName = route.name === 'QR Scanner' ? 'camera' : route.name === 'History' ? 'time' : route.name === 'Settings' ? 'settings' : 'person';
 
         return (
           <TouchableOpacity
@@ -258,16 +244,8 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
   );
 };
 
-
-
-
-
-
-
-
-// Main App component with bottom tab navigation
 export default function App() {
-  const [qrCodes, setQrCodes] = useState([]); // State to hold QR codes
+  const [qrCodes, setQrCodes] = useState([]);
 
   return (
     <QRCodeContext.Provider value={{ qrCodes, setQrCodes }}>
@@ -311,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   cameraContainer: {
-    flex: 1,
+    height: '60%', 
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
