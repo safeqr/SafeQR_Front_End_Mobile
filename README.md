@@ -64,8 +64,7 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 ├── screens
 │   ├── QRScannerScreen.tsx
 │   ├── HistoryScreen.tsx
-│   ├── SettingsScreen.tsx
-│   └── ProfileScreen.tsx
+│   └── SettingsScreen.tsx
 ├── navigation
 │   └── AppNavigator.tsx
 └── types.ts
