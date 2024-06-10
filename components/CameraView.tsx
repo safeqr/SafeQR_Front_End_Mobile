@@ -11,13 +11,13 @@ interface CameraViewProps {
 const CameraView: React.FC<CameraViewProps> = ({ onBarcodeScanned, barcodeScannerSettings, style }) => {
   return (
     <View style={style}>
-      <Camera
+      <CameraView
         style={StyleSheet.absoluteFillObject}
-        onBarCodeScanned={onBarcodeScanned}
-        barCodeScannerSettings={barcodeScannerSettings}
+        onBarcodeScanned={onBarcodeScanned}
+        barcodeScannerSettings={barcodeScannerSettings}
       />
     </View>
   );
-};
+}; 
 
 export default CameraView;
