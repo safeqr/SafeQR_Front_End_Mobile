@@ -9,10 +9,6 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 - **Settings**: (Placeholder) Adjust application settings.
 - **Profile**: (Placeholder) View and edit user profile.
 
-## Screenshots
-
-![QR Scanner Screen](./screenshots/qr_scanner_screen.png)
-![Bottom Navigation](./screenshots/bottom_navigation.png)
 
 ## Installation
 
@@ -28,14 +24,16 @@ SafeQR is a React Native application that allows users to scan QR codes using th
    npm install
    ```
 
-3. **Install Expo CLI** (if not already installed):
-   ```sh
-   npm install -g expo-cli
-   ```
 
-4. **Start the Application**:
+3. **Start the Application**:
    ```sh
    npx expo start
+   ```
+
+   
+3. **Install Expo CLI** (if step 3 causes expo error):
+   ```sh
+   npm install -g expo-cli
    ```
 
 5. **Run on Device**:
