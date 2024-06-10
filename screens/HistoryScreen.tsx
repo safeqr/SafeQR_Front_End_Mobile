@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { QRCodeContext } from '../types';
 
 const HistoryScreen: React.FC = () => {
-  const { qrCodes } = useContext(QRCodeContext);
+  const qrCodeContext = useContext(QRCodeContext);
 
+  // Safely access qrCodes and handle the case when the context is null
+  const qrCodes = qrCodeContext ? qrCodeContext.qrCodes : [];
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>History Screen</Text>

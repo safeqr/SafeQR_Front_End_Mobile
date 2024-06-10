@@ -3,8 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { QRCodeContext } from '../types';
 
 const SettingsScreen: React.FC = () => {
-  const { setQrCodes } = useContext(QRCodeContext);
+  const qrCodeContext = useContext(QRCodeContext);
 
+  // Safely access setQrCodes and handle the case when the context is null
+  const setQrCodes = qrCodeContext ? qrCodeContext.setQrCodes : () => {};
+
+  
   const clearHistory = () => {
     setQrCodes([]);
   };

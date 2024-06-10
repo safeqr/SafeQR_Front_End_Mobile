@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-// Custom tab bar component
-const CustomTabBar = ({ state, descriptors, navigation }) => {
+// Custom tab bar component with typings
+const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
   return (
     <View style={styles.tabBar}>
-      {/* Iterate through each route in the state to render tab buttons */}
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label = options.tabBarLabel !== undefined
@@ -15,14 +15,14 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             ? options.title
             : route.name;
 
-        // Check if the current route is focused
         const isFocused = state.index === index;
 
-        // Define the onPress behavior for each tab button
+        // Event handler for tab press
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
+            canPreventDefault: true
           });
 
           if (!isFocused && !event.defaultPrevented) {
@@ -30,7 +30,7 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           }
         };
 
-        // Define the onLongPress behavior for each tab button
+        // Event handler for tab long press
         const onLongPress = () => {
           navigation.emit({
             type: 'tabLongPress',
@@ -38,7 +38,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           });
         };
 
-        // Determine the icon name based on the route name
         const iconName = route.name === 'QR Scanner' ? 'camera' : route.name === 'History' ? 'time' : route.name === 'Settings' ? 'settings' : 'person';
 
         return (
@@ -52,17 +51,18 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
             onLongPress={onLongPress}
             style={styles.tabButton}
           >
-            {/* Render the icon and label for each tab */}
             <Ionicons name={iconName} size={24} color={isFocused ? '#673ab7' : '#222'} />
-            <Text style={{ color: isFocused ? '#673ab7' : '#222' }}>
-              {label}
-            </Text>
+            {/* Check if label is a string before rendering */}
+            {typeof label === 'string' ? (
+              <Text style={{ color: isFocused ? '#673ab7' : '#222' }}>
+                {label}
+              </Text>
+            ) : null}
           </TouchableOpacity>
         );
       })}
-      {/* Floating button to navigate directly to QR Scanner */}
-      <View style={styles.floatingButton}>
-        <TouchableOpacity onPress={() => { navigation.navigate('QR Scanner'); }}>
+      <View style={styles.floatingButtonContainer}>
+        <TouchableOpacity style={styles.floatingButton} onPress={() => { navigation.navigate('QR Scanner'); }}>
           <Ionicons name="camera" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -93,22 +93,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  floatingButton: {
+  floatingButtonContainer: {
     position: 'absolute',
-    bottom: 30,
+    top: -30,
     left: '50%',
-    marginLeft: -30,
+    marginLeft: -35,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
+    borderWidth: 3,
+    borderColor: '#673ab7',
+  },
+  floatingButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: '#673ab7',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 3,
   },
 });
 

@@ -109,7 +109,7 @@ const QRScannerScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR</Text>
+        <Text style={styles.headerText}>SafeQR v0.16</Text>
       </View>
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
       <View style={styles.cameraContainer}>
