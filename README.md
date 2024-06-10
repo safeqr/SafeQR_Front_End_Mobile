@@ -75,20 +75,24 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 
 The following dependencies are required to run this project:
 
-- `expo-camera`: For camera access and barcode scanning.
-- `@react-navigation/native`: For navigation.
-- `@react-navigation/stack`: For stack navigation.
-- `@react-navigation/bottom-tabs`: For bottom tab navigation.
-- `react-native-screens`: Required by React Navigation.
-- `react-native-safe-area-context`: Required by React Navigation.
-- `axios`: For making HTTP requests to VirusTotal API.
-- `@expo/vector-icons`: For icons used in the tab bar and camera view.
+    "@expo/vector-icons": "^14.0.2",
+    "@react-navigation/bottom-tabs": "^6.5.20",
+    "@react-navigation/native": "^6.1.17",
+    "axios": "^1.7.2",
+    "expo": "~51.0.11",
+    "expo-camera": "~15.0.10",
+    "expo-image-picker": "~15.0.5",
+    "expo-status-bar": "~1.12.1",
+    "react": "18.2.0",
+    "react-native": "0.74.2",
+    "react-native-safe-area-context": "^4.10.4",
+    "react-native-screens": "^3.31.1"
 
 ### Installation
 
-To install the dependencies, run the following command:
+To install the dependencies, run the following command(it will auto read package.json):
 
 ```bash
 npm install
-
+```
 
