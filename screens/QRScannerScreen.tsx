@@ -4,8 +4,15 @@ import { CameraView, Camera } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const QRScannerScreen: React.FC = () => {
+// Define the props for QRScannerScreen
+interface QRScannerScreenProps {
+  clearScanData: () => void;
+}
+
+const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
+  const navigation = useNavigation();
   const qrCodeContext = useContext(QRCodeContext);
   const { qrCodes, setQrCodes } = qrCodeContext || { qrCodes: [], setQrCodes: () => {} };
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -95,6 +102,20 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
+  const clearScanDataInternal = () => {
+    setScannedData('');
+    setScanResult(null);
+    setScanned(false);
+    setDataType('');
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      clearScanDataInternal();
+    });
+    return unsubscribe;
+  }, [navigation]);
+  
   if (showSplash) {
     return (
       <View style={styles.splashContainer}>
@@ -116,7 +137,7 @@ const QRScannerScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.35</Text>
+        <Text style={styles.headerText}>SafeQR v0.55</Text>
       </View>
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
       <View style={styles.cameraContainer}>

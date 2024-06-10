@@ -3,34 +3,49 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
+
+// Define custom props for CustomTabBar
+interface CustomTabBarProps extends BottomTabBarProps {
+  clearScanData: () => void;
+}
+
+
 // Custom tab bar component with typings
-const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
+const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, navigation, clearScanData }) => {
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const label = options.tabBarLabel !== undefined
-          ? options.tabBarLabel
-          : options.title !== undefined
+        const label =
+          options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
             ? options.title
             : route.name;
 
         const isFocused = state.index === index;
 
-        // Event handler for tab press
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true
-          });
+     // Event handler for tab press
+     const onPress = () => {
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true
+      });
 
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
+
+          if (route.name === 'QRScanner') {
+            clearScanData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'QRScanner' }],
+            });
+          }
         };
 
-        // Event handler for tab long press
         const onLongPress = () => {
           navigation.emit({
             type: 'tabLongPress',
@@ -38,7 +53,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
           });
         };
 
-        const iconName = route.name === 'QR Scanner' ? 'camera' : route.name === 'History' ? 'time' : route.name === 'Settings' ? 'settings' : 'person';
+        const iconName = route.name === 'QRScanner' ? 'camera' : route.name === 'History' ? 'time' : 'settings';
 
         return (
           <TouchableOpacity
@@ -51,7 +66,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
             onLongPress={onLongPress}
             style={styles.tabButton}
           >
-            <Ionicons name={iconName} size={24} color={isFocused ? '#673ab7' : '#222'} />
+           <Ionicons name={iconName} size={24} color={isFocused ? '#673ab7' : '#222'} />
             {/* Check if label is a string before rendering */}
             {typeof label === 'string' ? (
               <Text style={{ color: isFocused ? '#673ab7' : '#222' }}>
@@ -61,8 +76,14 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
           </TouchableOpacity>
         );
       })}
-      <View style={styles.floatingButtonContainer}>
-        <TouchableOpacity style={styles.floatingButton} onPress={() => { navigation.navigate('QR Scanner'); }}>
+      <View style={styles.floatingButton}>
+        <TouchableOpacity onPress={() => { 
+          clearScanData();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'QRScanner' }],
+          });
+        }}>
           <Ionicons name="camera" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -93,32 +114,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  floatingButtonContainer: {
-    position: 'absolute',
-    top: -30,
-    left: '50%',
-    marginLeft: -35,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 3,
-    borderWidth: 3,
-    borderColor: '#673ab7',
-  },
   floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: '50%',
+    marginLeft: -30,
     width: 60,
     height: 60,
     borderRadius: 30,
     backgroundColor: '#673ab7',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
   },
 });
 
