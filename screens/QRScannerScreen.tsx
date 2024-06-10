@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { CameraView , Camera  } from 'expo-camera';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { CameraView, Camera } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 
-
-
-// QR Scanner screen component
 const QRScannerScreen: React.FC = () => {
   const qrCodeContext = useContext(QRCodeContext);
   const { qrCodes, setQrCodes } = qrCodeContext || { qrCodes: [], setQrCodes: () => {} };
@@ -14,8 +12,9 @@ const QRScannerScreen: React.FC = () => {
   const [scanned, setScanned] = useState<boolean>(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [scannedData, setScannedData] = useState<string>('');
+  const [scanResult, setScanResult] = useState<any>(null); // State for VirusTotal scan result
+  const [dataType, setDataType] = useState<string>(''); // State for data type
 
-   // Request camera permissions when the component mounts
   useEffect(() => {
     const initializeApp = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -26,19 +25,26 @@ const QRScannerScreen: React.FC = () => {
     initializeApp();
   }, []);
 
-
-  // Handle the QR code scanned event
   const handleQRCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
 
+    // Parse the URI to determine its type
     let dataType;
     if (/^(http|https):\/\//.test(data)) {
       dataType = 'URL';
     } else if (/^[0-9]+$/.test(data)) {
-      dataType = 'Numbers';
+      dataType = 'Number';
+    } else if (/^mailto:/.test(data)) {
+      dataType = 'Email';
+    } else if (/^tel:/.test(data)) {
+      dataType = 'Phone Number';
+    } else if (/^smsto:/.test(data)) {
+      dataType = 'SMS';
     } else {
       dataType = 'Text';
     }
+
+    setDataType(dataType); // Set the data type in state
 
     let newScannedData = `Type: ${dataType}\nData: ${data}`;
 
@@ -46,6 +52,7 @@ const QRScannerScreen: React.FC = () => {
       const scanId = await scanWithVirusTotal(data);
       const positive = await getScanResult(scanId);
       newScannedData += `\nScore: ${positive}`;
+      setScanResult({ positive, scanId });
     } catch (error) {
       console.error('Error handling barcode scan:', error);
     }
@@ -54,7 +61,6 @@ const QRScannerScreen: React.FC = () => {
     setQrCodes([...qrCodes, newScannedData]);
   };
 
-   // Send the scanned data to VirusTotal for scanning
   const scanWithVirusTotal = async (data: any) => {
     const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
     const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
@@ -72,7 +78,6 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
-  // Get the scan result from VirusTotal using the scan ID
   const getScanResult = async (scanId: string) => {
     const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
     const url = 'https://www.virustotal.com/vtapi/v2/url/report';
@@ -106,15 +111,15 @@ const QRScannerScreen: React.FC = () => {
     return <Text>No access to camera</Text>;
   }
 
+  const extractedData = scannedData.split('\n')[1]?.split('Data: ')[1] || '';
+
   return (
     <View style={styles.container}>
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.25</Text>
+        <Text style={styles.headerText}>SafeQR v0.30</Text>
       </View>
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
       <View style={styles.cameraContainer}>
-
-        {/* Render the CameraView component for QR scanning */}
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
@@ -123,7 +128,26 @@ const QRScannerScreen: React.FC = () => {
       </View>
       {scannedData !== '' && (
         <View style={styles.dataBox}>
-          <Text style={styles.dataText}>{scannedData}</Text>
+          <Text style={styles.dataUrl}>{extractedData}</Text>
+          <View style={styles.divider} />
+          <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
+          <Text style={styles.resultText}>Result: {scanResult && scanResult.positive > 0 ? 'DANGEROUS' : 'SAFE'}</Text>
+          <View style={styles.divider} />
+          <Text style={styles.typeText}>Type: {dataType}</Text>
+          <Text style={styles.checksText}>Checks</Text>
+          <Text style={styles.checksText}>Secure Connection: ✘</Text>
+          <Text style={styles.checksText}>Virus Total Check: ✘</Text>
+          <Text style={styles.checksText}>Redirects: 2</Text>
+          <View style={styles.iconContainer}>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="share-social" size={24} color="#2196F3" />
+              <Text style={styles.iconText}>Share</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons name="open" size={24} color="#2196F3" />
+              <Text style={styles.iconText}>Open</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -163,16 +187,62 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   dataBox: {
-    marginVertical: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute',
+    top: '10%',
+    left: '5%',
+    right: '5%',
+    padding: 20,
+    backgroundColor: '#ffe6f0',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+    zIndex: 1, // Ensure it appears above other elements
   },
-  dataText: {
+  dataUrl: {
     fontSize: 16,
     color: '#000',
+    marginBottom: 10,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#ddd',
+    marginVertical: 10,
+  },
+  timestampText: {
+    fontSize: 12,
+    color: '#000',
+    marginBottom: 10,
+  },
+  resultText: {
+    fontSize: 16,
+    color: '#ff0000',
+    marginBottom: 10,
+  },
+  typeText: {
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 10,
+  },
+  checksText: {
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 5,
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  iconButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  iconText: {
+    color: '#2196F3',
+    marginTop: 5,
   },
   welcomeText: {
     textAlign: 'center',
