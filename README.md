@@ -48,7 +48,7 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 2. Navigate to the **QR Scanner** tab.
 3. Point your camera at a QR code.
 4. The app will scan and display the QR code data below the camera view.
-5. Use the bottom navigation to explore other sections (History, Settings, Profile).
+5. Use the bottom navigation to explore other sections (History,QR Scanner, Settings).
 
 ## Project Structure
 
@@ -76,16 +76,22 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 
 ## Dependencies
 
-- **react**: 18.0.0
-- **react-native**: 0.68.0
-- **expo**: 45.0.0
-- **@react-navigation/native**: 6.0.0
-- **@react-navigation/bottom-tabs**: 6.0.0
-- **expo-camera**: 12.0.0
-- **expo-constants**: 13.0.0
-- **expo-permissions**: 13.0.0
-- **@expo/vector-icons**: 13.0.0
-- **typescript**: 4.3.5
+The following dependencies are required to run this project:
 
-```
+- `expo-camera`: For camera access and barcode scanning.
+- `@react-navigation/native`: For navigation.
+- `@react-navigation/stack`: For stack navigation.
+- `@react-navigation/bottom-tabs`: For bottom tab navigation.
+- `react-native-screens`: Required by React Navigation.
+- `react-native-safe-area-context`: Required by React Navigation.
+- `axios`: For making HTTP requests to VirusTotal API.
+- `@expo/vector-icons`: For icons used in the tab bar and camera view.
+
+### Installation
+
+To install the dependencies, run the following command:
+
+```bash
+npm install
+
 
