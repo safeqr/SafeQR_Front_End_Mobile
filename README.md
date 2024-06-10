@@ -18,8 +18,8 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 
 1. **Clone the Repository**:
    ```sh
-   git clone https://github.com/yourusername/safeqr.git
-   cd safeqr
+   git clone https://github.com/safeqr/SafeQR_Front_End_Mobile.git
+   cd SafeQR_Front_End_Mobile
    ```
 
 2. **Install Dependencies**:
@@ -35,7 +35,7 @@ SafeQR is a React Native application that allows users to scan QR codes using th
 
 4. **Start the Application**:
    ```sh
-   expo start
+   npx expo start
    ```
 
 5. **Run on Device**:
