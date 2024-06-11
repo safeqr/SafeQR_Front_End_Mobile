@@ -2,23 +2,93 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { QRCodeContext } from '../types';
-import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios'; // For URL calls
+import { Ionicons } from '@expo/vector-icons'; // For icons
 import { useNavigation } from '@react-navigation/native';
+
+
+
+//-----------------FUNCTIONS DECLARED HERE------------------//
+// Function to determine the type of data
+const determineDataType = (data: string): string => {
+  if (/^(http|https):\/\//.test(data)) {
+    return 'URL';
+  } else if (/^[0-9]+$/.test(data)) {
+    return 'Number';
+  } else if (/^mailto:/.test(data)) {
+    return 'Email';
+  } else if (/^tel:/.test(data)) {
+    return 'Phone Number';
+  } else if (/^smsto:/.test(data)) {
+    return 'SMS';
+  } else {
+    return 'Text';
+  }
+};
+
+// Function to handle VirusTotal scanning
+const processWithVirusTotal = async (data: string) => {
+  const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
+  const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
+  const params = {
+    apikey: apiKey,
+    url: data,
+  };
+
+  try {
+    const response = await axios.post(url, null, { params });
+    return response.data.scan_id;
+  } catch (error) {
+    console.error('Error scanning with VirusTotal:', error);
+    throw error;
+  }
+};
+
+// Function to get VirusTotal scan results
+const getVirusTotalResults = async (scanId: string) => {
+  const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
+  const url = 'https://www.virustotal.com/vtapi/v2/url/report';
+  const params = {
+    apikey: apiKey,
+    resource: scanId,
+  };
+
+  try {
+    const response = await axios.get(url, { params });
+    return response.data.positives;
+  } catch (error) {
+    console.error('Error getting scan result:', error);
+    throw error;
+  }
+};
 
 // Define the props for QRScannerScreen
 interface QRScannerScreenProps {
   clearScanData: () => void;
 }
 
+
+//-----------------Main------------------//
 const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
-  const navigation = useNavigation();
-  const qrCodeContext = useContext(QRCodeContext);
+  
+  const navigation = useNavigation(); // call Navigation bar
+  const [showSplash, setShowSplash] = useState<boolean>(true); // call splash screen
+
+  // These are for .....
+  const qrCodeContext = useContext(QRCodeContext); // From ./tpes.ts
+
+  // this function stores the scanned data for the history page
   const { qrCodes, setQrCodes } = qrCodeContext || { qrCodes: [], setQrCodes: () => {} };
+
+  // Camera permission and scan state
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState<boolean>(false);
-  const [showSplash, setShowSplash] = useState<boolean>(true);
-  const [scannedData, setScannedData] = useState<string>('');
+
+  
+  const [scannedData, setScannedData] = useState<string>(''); // State for QR scanned Data
+  const extractedData = scannedData.split('\n')[1]?.split('Data: ')[1] || ''; // Split
+
+
   const [scanResult, setScanResult] = useState<any>(null); // State for VirusTotal scan result
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
@@ -33,32 +103,30 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     initializeApp();
   }, []);
 
-  const handleQRCodeScanned = async ({ type, data }: { type: string; data: string }) => {
-    setScanned(true);
 
-    // Parse the URI to determine its type
-    let dataType;
-    if (/^(http|https):\/\//.test(data)) {
-      dataType = 'URL';
-    } else if (/^[0-9]+$/.test(data)) {
-      dataType = 'Number';
-    } else if (/^mailto:/.test(data)) {
-      dataType = 'Email';
-    } else if (/^tel:/.test(data)) {
-      dataType = 'Phone Number';
-    } else if (/^smsto:/.test(data)) {
-      dataType = 'SMS';
-    } else {
-      dataType = 'Text';
-    }
 
-    setDataType(dataType); // Set the data type in state
+  // If loading this screen , reset the scanning data
+  const clearScanDataInternal = () => {
+    setScannedData('');
+    setScanResult(null);
+    setScanned(false);
+    setDataType('');
+  };
+
+
+
+  // The function that takes data from <Cameraview onBarcodeScanned
+  const handleQRCodeScanned = async ({ data }: { type: string; data: string }) => {
+    setScanned(true); //Flag is QR code already scanned
+
+    const dataType = determineDataType(data);
+    setDataType(dataType);
 
     let newScannedData = `Type: ${dataType}\nData: ${data}`;
 
     try {
-      const scanId = await scanWithVirusTotal(data);
-      const positive = await getScanResult(scanId);
+      const scanId = await processWithVirusTotal(data);
+      const positive = await getVirusTotalResults(scanId);
       newScannedData += `\nScore: ${positive}`;
       setScanResult({ positive, scanId });
     } catch (error) {
@@ -69,47 +137,9 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     setQrCodes([...qrCodes, newScannedData]);
   };
 
-  const scanWithVirusTotal = async (data: any) => {
-    const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
-    const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
-    const params = {
-      apikey: apiKey,
-      url: data,
-    };
 
-    try {
-      const response = await axios.post(url, null, { params });
-      return response.data.scan_id;
-    } catch (error) {
-      console.error('Error scanning with VirusTotal:', error);
-      throw error;
-    }
-  };
 
-  const getScanResult = async (scanId: string) => {
-    const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
-    const url = 'https://www.virustotal.com/vtapi/v2/url/report';
-    const params = {
-      apikey: apiKey,
-      resource: scanId,
-    };
-
-    try {
-      const response = await axios.get(url, { params });
-      return response.data.positives;
-    } catch (error) {
-      console.error('Error getting scan result:', error);
-      throw error;
-    }
-  };
-
-  const clearScanDataInternal = () => {
-    setScannedData('');
-    setScanResult(null);
-    setScanned(false);
-    setDataType('');
-  };
-
+  // If the focus is lost focus on this screen , when come reset the scan data
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       clearScanDataInternal();
@@ -117,10 +147,15 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     return unsubscribe;
   }, [navigation]);
 
+
+  // This function is for toggling torch
   const toggleTorch = () => {
     setEnableTorch((prev) => !prev);
   };
 
+
+  // For Splash, for some reason nedd to be near the end of the function...
+  // or else permission for camera is not asked
   if (showSplash) {
     return (
       <View style={styles.splashContainer}>
@@ -129,22 +164,31 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     );
   }
 
+  // While asking for permision the page behind will render this only
   if (hasPermission === null) {
     return <Text>Requesting for camera permission</Text>;
   }
 
+
+  // this will thrown on the screen and nothing else will load if no permission
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
 
-  const extractedData = scannedData.split('\n')[1]?.split('Data: ')[1] || '';
 
+  //---------------The UI part-----------------//
   return (
+    
     <View style={styles.container}>
+        {/* Banner section */}
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.55</Text>
+
+        <Text style={styles.headerText}>SafeQR v0.66</Text>
       </View>
+      {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
+
+      {/* The cutour for the camera */}
       <View style={styles.cameraContainer}>
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
@@ -152,13 +196,15 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
           style={styles.camera}
           enableTorch={enableTorch}
         />
+
+        {/* the torch icon inside the CameraView */}
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />
-          <Text style={styles.flashText}>
-            {enableTorch ? 'Turn Off' : 'Turn On'} Torch
-          </Text>
+            {enableTorch}
         </TouchableOpacity>
       </View>
+
+      {/* The CONTENT , the popup for the scanned data */}
       {scannedData !== '' && (
         <View style={styles.dataBox}>
           <Text style={styles.dataUrl}>{extractedData}</Text>
@@ -187,6 +233,10 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   );
 };
 
+
+
+
+//--------------------The CSS----------------//
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -222,15 +272,13 @@ const styles = StyleSheet.create({
   flashButton: {
     position: 'absolute',
     bottom: 20,
-    alignSelf: 'center',
+    left: 100, // Adjust this value to move it more or less to the left
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
-    padding: 10,
-    borderRadius: 5,
-  },
-  flashText: {
-    color: '#fff',
-    marginTop: 5,
+    borderRadius: 25, // Half of width and height to make it a circle
   },
   dataBox: {
     position: 'absolute',
