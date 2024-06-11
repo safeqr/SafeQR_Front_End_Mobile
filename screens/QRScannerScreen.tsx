@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { CameraView, Camera } from 'expo-camera';
+import { Camera, CameraView } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   const [scannedData, setScannedData] = useState<string>('');
   const [scanResult, setScanResult] = useState<any>(null); // State for VirusTotal scan result
   const [dataType, setDataType] = useState<string>(''); // State for data type
+  const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -115,7 +116,11 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     });
     return unsubscribe;
   }, [navigation]);
-  
+
+  const toggleTorch = () => {
+    setEnableTorch((prev) => !prev);
+  };
+
   if (showSplash) {
     return (
       <View style={styles.splashContainer}>
@@ -145,7 +150,14 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
           onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
           barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
           style={styles.camera}
+          enableTorch={enableTorch}
         />
+        <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
+          <Ionicons name="flashlight" size={24} color="#fff" />
+          <Text style={styles.flashText}>
+            {enableTorch ? 'Turn Off' : 'Turn On'} Torch
+          </Text>
+        </TouchableOpacity>
       </View>
       {scannedData !== '' && (
         <View style={styles.dataBox}>
@@ -206,6 +218,19 @@ const styles = StyleSheet.create({
   camera: {
     width: '100%',
     height: '100%',
+  },
+  flashButton: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    padding: 10,
+    borderRadius: 5,
+  },
+  flashText: {
+    color: '#fff',
+    marginTop: 5,
   },
   dataBox: {
     position: 'absolute',
