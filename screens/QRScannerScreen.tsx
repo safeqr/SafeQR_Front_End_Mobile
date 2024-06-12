@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
@@ -153,6 +153,11 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     setEnableTorch((prev) => !prev);
   };
 
+  // This is hardcoded function for testing
+  const handleTestScan = () => {
+    handleQRCodeScanned({ type: 'TEST', data: 'TEST123' });
+  };
+
 
   // For Splash, for some reason nedd to be near the end of the function...
   // or else permission for camera is not asked
@@ -183,7 +188,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
         {/* Banner section */}
       <View style={styles.banner}>
 
-        <Text style={styles.headerText}>SafeQR v0.66</Text>
+        <Text style={styles.headerText}>SafeQR v0.66.t</Text>
       </View>
       {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
@@ -197,11 +202,18 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
           enableTorch={enableTorch}
         />
 
-        {/* the torch icon inside the CameraView */}
+        {/* the torch icon floating above the camerView */}
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />
             {enableTorch}
         </TouchableOpacity>
+        <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
+          <Ionicons name="bug" size={24} color="#fff" />
+            {enableTorch}
+        </TouchableOpacity>
+
+
+        
       </View>
 
       {/* The CONTENT , the popup for the scanned data */}
@@ -344,6 +356,15 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: 'black',
   },
+  testButton: {
+    position: 'absolute',
+    bottom: 1,
+    alignSelf: 'stretch',
+    backgroundColor: '#000',
+    padding: 10,
+    borderRadius: 5,
+  // Ensure the button appears above other elements
+  }
 });
 
 export default QRScannerScreen;
