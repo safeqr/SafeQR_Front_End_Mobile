@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button } from 'react-native';
-import { Camera, CameraView } from 'expo-camera';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button, Alert } from 'react-native';
+import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import { useNavigation } from '@react-navigation/native';
-
-
+import * as ImagePicker from 'expo-image-picker';
 
 //-----------------FUNCTIONS DECLARED HERE------------------//
 // Function to determine the type of data
@@ -67,10 +66,9 @@ interface QRScannerScreenProps {
   clearScanData: () => void;
 }
 
-
 //-----------------Main------------------//
 const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
-  
+
   const navigation = useNavigation(); // call Navigation bar
   const [showSplash, setShowSplash] = useState<boolean>(true); // call splash screen
 
@@ -103,8 +101,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     initializeApp();
   }, []);
 
-
-
   // If loading this screen , reset the scanning data
   const clearScanDataInternal = () => {
     setScannedData('');
@@ -112,8 +108,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     setScanned(false);
     setDataType('');
   };
-
-
 
   // The function that takes data from <Cameraview onBarcodeScanned
   const handleQRCodeScanned = async ({ data }: { type: string; data: string }) => {
@@ -137,8 +131,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     setQrCodes([...qrCodes, newScannedData]);
   };
 
-
-
   // If the focus is lost focus on this screen , when come reset the scan data
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -146,7 +138,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     });
     return unsubscribe;
   }, [navigation]);
-
 
   // This function is for toggling torch
   const toggleTorch = () => {
@@ -158,8 +149,32 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     handleQRCodeScanned({ type: 'TEST', data: 'TEST123' });
   };
 
+  // Function to handle QR code scanning from the image picker
+  const handleImagePicker = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false, // Disabling the crop functionality
+      quality: 1,
+    });
 
-  // For Splash, for some reason nedd to be near the end of the function...
+    if (result && result.assets[0].uri) {
+      try {
+        const scannedResults = await scanFromURLAsync(result.assets[0].uri);
+        if (scannedResults.length > 0) {
+          const dataNeeded = scannedResults[0].data;
+          handleQRCodeScanned({ type: 'QR_CODE', data: dataNeeded });
+        } else {
+          setScannedData("No QR Code Found");
+          setTimeout(() => setScannedData(""), 4000);
+        }
+      } catch (error) {
+        console.error('Error scanning QR code from image:', error);
+        Alert.alert('Failed to scan QR code from image.');
+      }
+    }
+  };
+
+  // For Splash, for some reason need to be near the end of the function...
   // or else permission for camera is not asked
   if (showSplash) {
     return (
@@ -169,31 +184,27 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     );
   }
 
-  // While asking for permision the page behind will render this only
+  // While asking for permission the page behind will render this only
   if (hasPermission === null) {
     return <Text>Requesting for camera permission</Text>;
   }
-
 
   // this will thrown on the screen and nothing else will load if no permission
   if (hasPermission === false) {
     return <Text>No access to camera</Text>;
   }
 
-
   //---------------The UI part-----------------//
   return (
-    
     <View style={styles.container}>
-        {/* Banner section */}
+      {/* Banner section */}
       <View style={styles.banner}>
-
-        <Text style={styles.headerText}>SafeQR v0.66.t</Text>
+        <Text style={styles.headerText}>SafeQR v0.70</Text>
       </View>
       {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
 
-      {/* The cutour for the camera */}
+      {/* The cutout for the camera */}
       <View style={styles.cameraContainer}>
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleQRCodeScanned}
@@ -202,18 +213,21 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
           enableTorch={enableTorch}
         />
 
-        {/* the torch icon floating above the camerView */}
+        {/* the torch icon floating above the CameraView */}
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />
-            {enableTorch}
+          {enableTorch}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
           <Ionicons name="bug" size={24} color="#fff" />
-            {enableTorch}
+          
+
+        {/* the image icon for opening album/gallery */}
         </TouchableOpacity>
+        <TouchableOpacity onPress={handleImagePicker} style={styles.galleryButton}>
+  <Ionicons name="image" size={24} color="#fff" />
+</TouchableOpacity>
 
-
-        
       </View>
 
       {/* The CONTENT , the popup for the scanned data */}
@@ -244,9 +258,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     </View>
   );
 };
-
-
-
 
 //--------------------The CSS----------------//
 const styles = StyleSheet.create({
@@ -363,8 +374,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     padding: 10,
     borderRadius: 5,
-  // Ensure the button appears above other elements
-  }
+    // Ensure the button appears above other elements
+  },
+  galleryButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 100, // Adjust this value to move it more or less to the right
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    borderRadius: 25, // Half of width and height to make it a circle
+  },
+  
 });
 
 export default QRScannerScreen;
