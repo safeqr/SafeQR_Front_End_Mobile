@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button, Alert, Image } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import QRCode from 'react-native-qrcode-svg';
+
 
 //-----------------FUNCTIONS DECLARED HERE------------------//
 // Function to determine the type of data
@@ -91,6 +93,8 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
 
+
+
   useEffect(() => {
     const initializeApp = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -160,7 +164,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   clearScanDataInternal();
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: false, // Disabling the crop functionality
+    allowsEditing: false, // Don't ask user to crop images
     quality: 1,
   });
 
@@ -211,7 +215,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     <View style={styles.container}>
       {/* Banner section */}
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.70</Text>
+        <Text style={styles.headerText}>SafeQR v0.77</Text>
       </View>
       {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
@@ -245,12 +249,21 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
       {/* The CONTENT , the popup for the scanned data */}
       {scannedData !== '' && (
         <View style={styles.dataBox}>
-          <Text style={styles.dataUrl}>{extractedData}</Text>
+          <View style={styles.row}>
+            <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
+            <Text style={styles.payload}>{extractedData}</Text>
+          </View>
           <View style={styles.divider} />
           <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
-          <Text style={styles.resultText}>Result: {scanResult && scanResult.positive > 0 ? 'DANGEROUS' : 'SAFE'}</Text>
+          <View style={styles.qrContainer}>
+            <QRCode value={extractedData} size={100} backgroundColor="transparent" />
+            <Text style={styles.resultText}>
+              Result: {scanResult && scanResult.positive > 0 ? 'DANGEROUS' : 'SAFE'}
+            </Text>
+          </View>
           <View style={styles.divider} />
           <Text style={styles.typeText}>Type: {dataType}</Text>
+          <Text style={styles.blankLine}>{'\n'}</Text>
           <Text style={styles.checksText}>Checks</Text>
           <Text style={styles.checksText}>Secure Connection: ✘</Text>
           <Text style={styles.checksText}>Virus Total Check: ✘</Text>
@@ -266,33 +279,62 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
             </TouchableOpacity>
           </View>
         </View>
-      )}
+        )}
+
     </View>
   );
 };
 
-//--------------------The CSS----------------//
 const styles = StyleSheet.create({
+  // Container for the main screen
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',
     padding: 20,
   },
+
+  // Row for aligning items horizontally
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  // Icon for scanned data
+  scan_icon: {
+    width: 50, // Adjust the size as needed
+    height: 50,
+    marginRight: 8, // Space between icon and text
+  },
+
+  // Text for payload display
+  payload: {
+    fontSize: 20,
+    color: '#000',
+    marginBottom: 1,
+  },
+
+  // Banner container
   banner: {
     alignItems: 'center',
     marginBottom: 20,
   },
+
+  // Text for the header
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ff69b4',
   },
+
+  // Container for splash screen
   splashContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f0fc',
   },
+
+  // Container for camera view
   cameraContainer: {
     height: '60%',
     alignItems: 'center',
@@ -300,10 +342,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
   },
+
+  // Camera style
   camera: {
     width: '100%',
     height: '100%',
   },
+
+  // Button for flashlight
   flashButton: {
     position: 'absolute',
     bottom: 20,
@@ -315,6 +361,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 25, // Half of width and height to make it a circle
   },
+
+  // Box for displaying scanned data
   dataBox: {
     position: 'absolute',
     top: '10%',
@@ -330,55 +378,88 @@ const styles = StyleSheet.create({
     elevation: 3,
     zIndex: 1, // Ensure it appears above other elements
   },
-  dataUrl: {
-    fontSize: 16,
-    color: '#000',
-    marginBottom: 10,
+
+  // Container for QR code
+  qrContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
   },
+
+  // Style for QR code image
+  qrCodeImage: {
+    marginVertical: 10,
+  },
+
+  // Blank line for spacing
+  blankLine: {
+    height: 20, // Adjust the height to control the space between lines
+  },
+
+  // Divider line
   divider: {
     height: 1,
     backgroundColor: '#ddd',
     marginVertical: 10,
+    alignSelf: 'stretch',
   },
+
+  // Text for timestamp
   timestampText: {
     fontSize: 12,
     color: '#000',
     marginBottom: 10,
   },
+
+  // Text for result
   resultText: {
     fontSize: 16,
     color: '#ff0000',
     marginBottom: 10,
+    textAlign: 'center',
   },
+
+  // Text for data type
   typeText: {
     fontSize: 16,
     color: '#000',
     marginBottom: 10,
   },
+
+  // Text for checks
   checksText: {
     fontSize: 16,
     color: '#000',
     marginBottom: 5,
   },
+
+  // Container for icons
   iconContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
   },
+
+  // Style for icon button
   iconButton: {
     flexDirection: 'column',
     alignItems: 'center',
   },
+
+  // Text for icon button
   iconText: {
     color: '#2196F3',
     marginTop: 5,
   },
+
+  // Text for welcome message
   welcomeText: {
     textAlign: 'center',
     fontSize: 20,
     marginVertical: 10,
     color: 'black',
   },
+
+  // Button for test scan
   testButton: {
     position: 'absolute',
     bottom: 1,
@@ -386,8 +467,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     padding: 10,
     borderRadius: 5,
-    // Ensure the button appears above other elements
   },
+
+  // Button for gallery
   galleryButton: {
     position: 'absolute',
     bottom: 20,
@@ -399,7 +481,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 25, // Half of width and height to make it a circle
   },
-  
 });
+
+
 
 export default QRScannerScreen;
