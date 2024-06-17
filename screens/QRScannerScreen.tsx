@@ -149,30 +149,42 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     handleQRCodeScanned({ type: 'TEST', data: 'TEST123' });
   };
 
-  // Function to handle QR code scanning from the image picker
-  const handleImagePicker = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false, // Disabling the crop functionality
-      quality: 1,
-    });
 
-    if (result && result.assets[0].uri) {
-      try {
-        const scannedResults = await scanFromURLAsync(result.assets[0].uri);
-        if (scannedResults.length > 0) {
-          const dataNeeded = scannedResults[0].data;
-          handleQRCodeScanned({ type: 'QR_CODE', data: dataNeeded });
-        } else {
-          setScannedData("No QR Code Found");
-          setTimeout(() => setScannedData(""), 4000);
-        }
-      } catch (error) {
-        console.error('Error scanning QR code from image:', error);
-        Alert.alert('Failed to scan QR code from image.');
+
+//https://medium.com/@funti009/create-a-mobile-qr-scanner-that-scans-via-camera-and-image-in-the-gallery-react-native-expo-ee7098a265d7
+// Refactored to use Camera.scanFromURLAsync instead
+ // Function to handle QR code scanning from the image picker
+
+
+ const handleImagePicker = async () => {
+  clearScanDataInternal();
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: false, // Disabling the crop functionality
+    quality: 1,
+  });
+
+
+  //if (result && result.assets[0].uri) { // KIV this....
+  if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // this is to unsure the uri is not empty 
+    try {
+      const scannedResult = await scanFromURLAsync(result.assets[0].uri);
+      if (!scannedResult.data) { // This will check if no QR was scanned
+        // Not sure why by passing the scannedResults.data is not working , only works when I use scannedResults[0].data.....  KIV >.<
+        const dataNeeded = scannedResult[0].data;  
+        handleQRCodeScanned({ type: 'QR_CODE', data: dataNeeded });
+      } else {
+        setScannedData("No QR Code Found");
+        setTimeout(() => setScannedData(""), 4000);
       }
+    } catch (error) {
+      console.error('Error scanning QR code from image:', error);
+      Alert.alert('Failed to scan QR code from image.');
     }
-  };
+  }
+};
+
+
 
   // For Splash, for some reason need to be near the end of the function...
   // or else permission for camera is not asked
