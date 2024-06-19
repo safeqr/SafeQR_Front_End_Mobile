@@ -10,7 +10,7 @@ import CustomTabBar from './components/CustomTabBar';
 const Tab = createBottomTabNavigator();
 
 const App: React.FC = () => {
-  const [qrCodes, setQrCodes] = useState<string[]>([]);
+  const [qrCodes, setQrCodes] = useState<{ data: string, bookmarked: boolean, scanResult: { secureConnection: boolean, virusTotalCheck: boolean, redirects: number } }[]>([]);
   const [scannedData, setScannedData] = useState<string>('');
 
   const clearScanData = () => {
@@ -22,11 +22,13 @@ const App: React.FC = () => {
       <NavigationContainer>
         <Tab.Navigator
           initialRouteName="QRScanner"
-          tabBar={(props) => <CustomTabBar {...props} clearScanData={clearScanData} />}
+          tabBar={props => <CustomTabBar {...props} clearScanData={clearScanData} />}
         >
           <Tab.Screen name="History" component={HistoryScreen} />
           <Tab.Screen name="QRScanner">
-            {(props) => <QRScannerScreen {...props} clearScanData={clearScanData} />}
+            {(props) => <QRScannerScreen clearScanData={function (): void {
+              throw new Error('Function not implemented.');
+            } } {...props} />}
           </Tab.Screen>
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>

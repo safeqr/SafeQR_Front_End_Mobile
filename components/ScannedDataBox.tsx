@@ -11,6 +11,24 @@ interface ScannedDataBoxProps {
 
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataType }) => {
   const extractedData = data.split('\n')[1]?.split('Data: ')[1] || '';
+  let resultText = 'SAFE';
+  let resultColor = styles.safeResult;
+
+  if (scanResult) {
+    if (!scanResult.secureConnection || !scanResult.virusTotalCheck) {
+      resultText = 'DANGEROUS';
+      resultColor = styles.dangerousResult;
+    } else if (scanResult.secureConnection && scanResult.virusTotalCheck) {
+      resultText = 'SAFE';
+      resultColor = styles.safeResult;
+    } else {
+      resultText = 'WARNING';
+      resultColor = styles.warningResult;
+    }
+  } else {
+    resultText = 'WARNING';
+    resultColor = styles.warningResult;
+  }
 
   return (
     <View style={styles.dataBox}>
@@ -22,17 +40,17 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataT
       <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
       <View style={styles.qrContainer}>
         <QRCode value={extractedData} size={100} backgroundColor="transparent" />
-        <Text style={styles.resultText}>
-          Result: {scanResult && scanResult.positive > 0 ? 'DANGEROUS' : 'SAFE'}
+        <Text style={[styles.resultText, resultColor]}>
+          Result: {resultText}
         </Text>
       </View>
       <View style={styles.divider} />
       <Text style={styles.typeText}>Type: {dataType}</Text>
       <Text style={styles.blankLine}>{'\n'}</Text>
       <Text style={styles.checksText}>Checks</Text>
-      <Text style={styles.checksText}>Secure Connection: ✘</Text>
-      <Text style={styles.checksText}>Virus Total Check: ✘</Text>
-      <Text style={styles.checksText}>Redirects: 2</Text>
+      <Text style={styles.checksText}>Secure Connection: {scanResult?.secureConnection ? '✔️' : '✘'}</Text>
+      <Text style={styles.checksText}>Virus Total Check: {scanResult?.virusTotalCheck ? '✔️' : '✘'}</Text>
+      <Text style={styles.checksText}>Redirects: {scanResult?.redirects ?? 'N/A'}</Text>
       <View style={styles.iconContainer}>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="share-social" size={24} color="#2196F3" />
@@ -93,9 +111,17 @@ const styles = StyleSheet.create({
   },
   resultText: {
     fontSize: 16,
-    color: '#ff0000',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  safeResult: {
+    color: 'green',
+  },
+  warningResult: {
+    color: 'orange',
+  },
+  dangerousResult: {
+    color: 'red',
   },
   typeText: {
     fontSize: 16,

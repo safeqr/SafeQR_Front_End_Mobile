@@ -244,7 +244,6 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
         <TouchableOpacity onPress={handleImagePicker} style={styles.galleryButton}>
   <Ionicons name="image" size={24} color="#fff" />
 </TouchableOpacity>
-
       {/* The CONTENT , the popup for the scanned data */}
       {/* This is called from ../components/ScannedDataBox*/}
       </View>
