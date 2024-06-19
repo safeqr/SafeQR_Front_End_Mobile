@@ -1,23 +1,34 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { QRCodeContext } from '../types';
+import ScannedDataBox from '../components/ScannedDataBox';
 
 const HistoryScreen: React.FC = () => {
   const qrCodeContext = useContext(QRCodeContext);
 
-  // Safely access qrCodes and handle the case when the context is null
-  const qrCodes = qrCodeContext ? qrCodeContext.qrCodes : [];
+  const { qrCodes, setCurrentScannedData } = qrCodeContext || { qrCodes: [], setCurrentScannedData: () => {} };
+
+  const [selectedData, setSelectedData] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<any>(null); // KI for testing
+  const [dataType, setDataType] = useState<string>(''); // KIV
+
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>History Screen</Text>
+      {selectedData && (
+        <ScannedDataBox data={selectedData} scanResult={scanResult} dataType={dataType} />
+      )}
       <FlatList
         data={qrCodes}
         renderItem={({ item }) => (
-          <View style={styles.dataBox}>
-            <Text style={styles.dataText}>{item}</Text>
-          </View>
+          <TouchableOpacity onPress={() => setSelectedData(item)}>
+            <View style={styles.dataBox}>
+              <Text style={styles.dataText}>{item}</Text>
+            </View>
+          </TouchableOpacity>
         )}
         keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.flatListContent} 
       />
     </View>
   );
@@ -46,6 +57,9 @@ const styles = StyleSheet.create({
   dataText: {
     fontSize: 16,
     color: '#000',
+  },
+  flatListContent: {
+    paddingBottom: 100, // Add padding to the bottom so that it wont kenna hidden by nav bar
   },
 });
 
