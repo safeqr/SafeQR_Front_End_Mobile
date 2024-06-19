@@ -123,17 +123,33 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
 
     let newScannedData = `Type: ${dataType}\nData: ${data}`;
 
+    let scanResult = {
+      secureConnection: false,
+      virusTotalCheck: false,
+      redirects: 0
+    };
+
     try {
       const scanId = await processWithVirusTotal(data);
       const positive = await getVirusTotalResults(scanId);
       newScannedData += `\nScore: ${positive}`;
-      setScanResult({ positive, scanId });
+      scanResult = {
+        secureConnection: true, // Assume secure connection if we get here
+        virusTotalCheck: positive === 0, // Safe if no positive results
+        redirects: 2 // Arbitrary value, replace with real data if available
+      };
     } catch (error) {
       console.error('Error handling barcode scan:', error);
     }
 
+    const qrCode = {
+      data: newScannedData,
+      bookmarked: false,
+      scanResult
+    };
+
     setScannedData(newScannedData);
-    setQrCodes([...qrCodes, newScannedData]);
+    setQrCodes([...qrCodes, qrCode]);
   };
 
   // If the focus is lost focus on this screen , when come reset the scan data

@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-interface QRCode {
+export interface QRCode {
   data: string;
   bookmarked: boolean;
   scanResult: {
