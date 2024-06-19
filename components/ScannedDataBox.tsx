@@ -11,24 +11,27 @@ interface ScannedDataBoxProps {
 
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataType }) => {
   const extractedData = data.split('\n')[1]?.split('Data: ')[1] || '';
-  let resultText = 'SAFE';
-  let resultColor = styles.safeResult;
 
-  if (scanResult) {
-    if (!scanResult.secureConnection || !scanResult.virusTotalCheck) {
-      resultText = 'DANGEROUS';
-      resultColor = styles.dangerousResult;
-    } else if (scanResult.secureConnection && scanResult.virusTotalCheck) {
-      resultText = 'SAFE';
-      resultColor = styles.safeResult;
+  const getResultText = () => {
+    if (!scanResult || (!scanResult.secureConnection && !scanResult.virusTotalCheck)) {
+      return 'DANGEROUS';
+    } else if (scanResult.redirects > 0) {
+      return 'WARNING';
     } else {
-      resultText = 'WARNING';
-      resultColor = styles.warningResult;
+      return 'SAFE';
     }
-  } else {
-    resultText = 'WARNING';
-    resultColor = styles.warningResult;
-  }
+  };
+
+  const getResultColor = () => {
+    const result = getResultText();
+    if (result === 'DANGEROUS') {
+      return '#ff0000'; // Red
+    } else if (result === 'WARNING') {
+      return '#ffa500'; // Orange
+    } else {
+      return '#00ff00'; // Green
+    }
+  };
 
   return (
     <View style={styles.dataBox}>
@@ -40,8 +43,8 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataT
       <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
       <View style={styles.qrContainer}>
         <QRCode value={extractedData} size={100} backgroundColor="transparent" />
-        <Text style={[styles.resultText, resultColor]}>
-          Result: {resultText}
+        <Text style={[styles.resultText, { color: getResultColor() }]}>
+          Result: {getResultText()}
         </Text>
       </View>
       <View style={styles.divider} />
@@ -113,15 +116,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 10,
     textAlign: 'center',
-  },
-  safeResult: {
-    color: 'green',
-  },
-  warningResult: {
-    color: 'orange',
-  },
-  dangerousResult: {
-    color: 'red',
   },
   typeText: {
     fontSize: 16,

@@ -232,7 +232,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     <View style={styles.container}>
       {/* Banner section */}
       <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.77</Text>
+        <Text style={styles.headerText}>SafeQR v0.89</Text>
       </View>
       {/* Welcome Text */}
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>

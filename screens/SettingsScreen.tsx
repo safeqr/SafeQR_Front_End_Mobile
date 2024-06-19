@@ -1,24 +1,42 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { QRCodeContext } from '../types';
 
 const SettingsScreen: React.FC = () => {
   const qrCodeContext = useContext(QRCodeContext);
-
-  // Safely access setQrCodes and handle the case when the context is null
   const setQrCodes = qrCodeContext ? qrCodeContext.setQrCodes : () => {};
 
-  
   const clearHistory = () => {
     setQrCodes([]);
   };
 
+  const handleLinkPress = (url: string) => {
+    Linking.openURL(url);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Settings Screen</Text>
-      <TouchableOpacity style={styles.button} onPress={clearHistory}>
-        <Text style={styles.buttonText}>Clear History</Text>
-      </TouchableOpacity>
+      <Text style={styles.header}>Settings</Text>
+      <View style={styles.profileSection}>
+        <Text style={styles.sectionTitle}>Profile</Text>
+        <TouchableOpacity style={styles.loginButton}>
+          <Text style={styles.loginButtonText}>Log In</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.divider} />
+      <View style={styles.aboutUsSection}>
+        <Text style={styles.sectionTitle}>About Us</Text>
+        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/')}>
+          <Text style={styles.linkText}>safeqr.github.io/marketing</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/privacy-policy')}>
+          <Text style={styles.linkText}>Privacy Policy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/terms-of-service')}>
+          <Text style={styles.linkText}>Terms Of Service</Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.versionText}>Version 1.2</Text>
     </View>
   );
 };
@@ -29,24 +47,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f0fc',
     padding: 20,
   },
-  welcomeText: {
-    textAlign: 'center',
-    fontSize: 20,
-    marginVertical: 10,
-    color: 'black',
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ff69b4',
+    marginBottom: 20,
   },
-  button: {
-    backgroundColor: '#333',
+  profileSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 10,
+  },
+  loginButton: {
+    backgroundColor: '#ff69b4',
+    paddingVertical: 8,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 30,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 10,
+    alignSelf: 'flex-start',
   },
-  buttonText: {
-    color: 'white',
+  loginButtonText: {
+    color: '#000',
     fontSize: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#ccc',
+    marginVertical: 20,
+  },
+  aboutUsSection: {
+    marginBottom: 20,
+  },
+  linkText: {
+    fontSize: 16,
+    color: '#0000ff',
+    marginBottom: 10,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#aaa',
+    marginTop: 20,
   },
 });
 

@@ -66,10 +66,10 @@ const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, naviga
             onLongPress={onLongPress}
             style={styles.tabButton}
           >
-           <Ionicons name={iconName} size={24} color={isFocused ? '#673ab7' : '#222'} />
+           <Ionicons name={iconName} size={24} color={isFocused ? '#ff69b4' : '#222'} />
             {/* Check if label is a string before rendering */}
             {typeof label === 'string' ? (
-              <Text style={{ color: isFocused ? '#673ab7' : '#222' }}>
+              <Text style={{ color: isFocused ? '#ff69b4' : '#222' }}>
                 {label}
               </Text>
             ) : null}
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#673ab7',
+    backgroundColor: '#ff69b4',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
