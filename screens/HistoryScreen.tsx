@@ -48,6 +48,11 @@ const HistoryScreen: React.FC = () => {
     setIsModalVisible(true);
   };
 
+  const clearSelectedData = () => {
+    setSelectedData(null);
+    setSelectedScanResult(null);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -59,7 +64,9 @@ const HistoryScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
       {selectedData && (
-        <ScannedDataBox data={selectedData} scanResult={selectedScanResult} dataType="URL" />
+        <View style={styles.scannedDataBoxContainer}>
+          <ScannedDataBox data={selectedData} scanResult={selectedScanResult} dataType="URL" clearScanData={clearSelectedData} />
+        </View>
       )}
       <FlatList
         data={filteredQrCodes}
@@ -210,6 +217,9 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     color: '#000',
+  },
+  scannedDataBoxContainer: {
+    marginBottom: 20,
   },
 });
 

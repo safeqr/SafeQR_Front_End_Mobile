@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Button, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Image, BackHandler } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
@@ -64,10 +64,16 @@ const getVirusTotalResults = async (scanId: string) => {
   }
 };
 
+
+
+
 // Define the props for QRScannerScreen
 interface QRScannerScreenProps {
   clearScanData: () => void;
 }
+
+
+
 
 //-----------------Main------------------//
 const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
@@ -170,42 +176,45 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     handleQRCodeScanned({ type: 'TEST', data: 'TEST123' });
   };
 
+  // https://medium.com/@funti009/create-a-mobile-qr-scanner-that-scans-via-camera-and-image-in-the-gallery-react-native-expo-ee7098a265d7
+  // Refactored to use Camera.scanFromURLAsync instead
+  // Function to handle QR code scanning from the image picker
+  const handleImagePicker = async () => {
+    clearScanDataInternal();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false, // Don't ask user to crop images
+      quality: 1,
+    });
 
-
-//https://medium.com/@funti009/create-a-mobile-qr-scanner-that-scans-via-camera-and-image-in-the-gallery-react-native-expo-ee7098a265d7
-// Refactored to use Camera.scanFromURLAsync instead
- // Function to handle QR code scanning from the image picker
-
-
- const handleImagePicker = async () => {
-  clearScanDataInternal();
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: false, // Don't ask user to crop images
-    quality: 1,
-  });
-
-
-  //if (result && result.assets[0].uri) { // KIV this....
-  if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // this is to unsure the uri is not empty 
-    try {
-      const scannedResult = await scanFromURLAsync(result.assets[0].uri);
-      if (!scannedResult.data) { // This will check if no QR was scanned
-        // Not sure why by passing the scannedResults.data is not working , only works when I use scannedResults[0].data.....  KIV >.<
-        const dataNeeded = scannedResult[0].data;  
-        handleQRCodeScanned({ type: 'QR_CODE', data: dataNeeded });
-      } else {
-        setScannedData("No QR Code Found");
-        setTimeout(() => setScannedData(""), 4000);
+    // if (result && result.assets[0].uri) { // KIV this....
+    if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // this is to unsure the uri is not empty 
+      try {
+        const scannedResult = await scanFromURLAsync(result.assets[0].uri);
+        if (!scannedResult.data) { // This will check if no QR was scanned
+          // Not sure why by passing the scannedResults.data is not working , only works when I use scannedResults[0].data.....  KIV >.<
+          const dataNeeded = scannedResult[0].data;
+          handleQRCodeScanned({ type: 'QR_CODE', data: dataNeeded });
+        } else {
+          setScannedData("No QR Code Found");
+          setTimeout(() => setScannedData(""), 4000);
+        }
+      } catch (error) {
+        console.error('Error scanning QR code from image:', error);
+        Alert.alert('Failed to scan QR code from image.');
       }
-    } catch (error) {
-      console.error('Error scanning QR code from image:', error);
-      Alert.alert('Failed to scan QR code from image.');
     }
-  }
-};
+  };
 
+  // Add back button handler to clear scanned data
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      clearScanDataInternal();
+      return true;
+    });
 
+    return () => backHandler.remove();
+  }, []);
 
   // For Splash, for some reason need to be near the end of the function...
   // or else permission for camera is not asked
@@ -253,19 +262,19 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
         </TouchableOpacity>
         <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
           <Ionicons name="bug" size={24} color="#fff" />
-          
+        </TouchableOpacity>
 
         {/* the image icon for opening album/gallery */}
-        </TouchableOpacity>
         <TouchableOpacity onPress={handleImagePicker} style={styles.galleryButton}>
-  <Ionicons name="image" size={24} color="#fff" />
-</TouchableOpacity>
+          <Ionicons name="image" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+      
       {/* The CONTENT , the popup for the scanned data */}
       {/* This is called from ../components/ScannedDataBox*/}
-      </View>
       {scannedData !== '' && (
         <View style={styles.scannedDataBox}>
-          <ScannedDataBox data={scannedData} scanResult={scanResult} dataType={dataType} />
+          <ScannedDataBox data={scannedData} scanResult={scanResult} dataType={dataType} clearScanData={clearScanDataInternal} />
         </View>
       )}
     </View>
@@ -337,8 +346,10 @@ const styles = StyleSheet.create({
   scannedDataBox: {
     position: 'absolute',
     top: '10%',
+    height: '100%',
     left: '5%',
     right: '5%',
+
     zIndex: 2,
   },
   welcomeText: {
@@ -348,7 +359,5 @@ const styles = StyleSheet.create({
     color: 'black',
   },
 });
-
-
 
 export default QRScannerScreen;

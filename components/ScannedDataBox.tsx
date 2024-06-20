@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 interface ScannedDataBoxProps {
   data: string;
   dataType: string;
+  clearScanData: () => void;
 }
 
 interface ScanResult {
@@ -14,7 +15,7 @@ interface ScanResult {
   redirects: number;
 }
 
-const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType }) => {
+const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
 
   useEffect(() => {
@@ -71,6 +72,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType }) => {
 
   return (
     <View style={styles.dataBox}>
+      <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
+        <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
+      </TouchableOpacity>
       <View style={styles.row}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
         <Text style={styles.payload}>{extractedData}</Text>
@@ -175,6 +179,11 @@ const styles = StyleSheet.create({
   iconText: {
     color: '#2196F3',
     marginTop: 5,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 });
 
