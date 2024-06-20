@@ -1,19 +1,51 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ScannedDataBoxProps {
   data: string;
-  scanResult: any;
   dataType: string;
 }
 
-const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataType }) => {
-  const extractedData = data.split('\n')[1]?.split('Data: ')[1] || '';
+interface ScanResult {
+  secureConnection: boolean;
+  virusTotalCheck: boolean;
+  redirects: number;
+}
+
+const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType }) => {
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+
+  useEffect(() => {
+    if (data.includes('https://Safe_website.com')) {
+      setScanResult({
+        secureConnection: true,
+        virusTotalCheck: true,
+        redirects: 0,
+      });
+    } else if (data.includes('https://unknown_website.com')) {
+      setScanResult({
+        secureConnection: true,
+        virusTotalCheck: true,
+        redirects: 2,
+      });
+    } else if (data.includes('http://danger_website.com')) {
+      setScanResult({
+        secureConnection: false,
+        virusTotalCheck: false,
+        redirects: 3,
+      });
+    } else {
+      setScanResult(null);
+    }
+  }, [data]);
 
   const getResultText = () => {
-    if (!scanResult || (!scanResult.secureConnection && !scanResult.virusTotalCheck)) {
+    if (!scanResult) {
+      return 'UNKNOWN';
+    }
+    if (!scanResult.secureConnection && !scanResult.virusTotalCheck) {
       return 'DANGEROUS';
     } else if (scanResult.redirects > 0) {
       return 'WARNING';
@@ -28,10 +60,14 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataT
       return '#ff0000'; // Red
     } else if (result === 'WARNING') {
       return '#ffa500'; // Orange
+    } else if (result === 'SAFE') {
+      return '#44c167'; // Green
     } else {
-      return '#00ff00'; // Green
+      return '#000000'; // Black for unknown
     }
   };
+
+  const extractedData = data.split('\n')[1]?.split('Data: ')[1] || '';
 
   return (
     <View style={styles.dataBox}>
@@ -53,7 +89,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, scanResult, dataT
       <Text style={styles.checksText}>Checks</Text>
       <Text style={styles.checksText}>Secure Connection: {scanResult?.secureConnection ? '✔️' : '✘'}</Text>
       <Text style={styles.checksText}>Virus Total Check: {scanResult?.virusTotalCheck ? '✔️' : '✘'}</Text>
-      <Text style={styles.checksText}>Redirects: {scanResult?.redirects ?? 'N/A'}</Text>
+      <Text style={styles.checksText}>Redirects: {scanResult ? scanResult.redirects : 'N/A'}</Text>
       <View style={styles.iconContainer}>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="share-social" size={24} color="#2196F3" />

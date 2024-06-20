@@ -114,7 +114,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
     setDataType('');
   };
 
-  // The function that takes data from <Cameraview onBarcodeScanned
+  // The function  takes data from Cameraview.onBarcodeScanned
   const handleQRCodeScanned = async ({ data }: { type: string; data: string }) => {
     setScanned(true); //Flag is QR code already scanned
 
