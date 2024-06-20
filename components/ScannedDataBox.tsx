@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,6 +17,7 @@ interface ScanResult {
 
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   useEffect(() => {
     if (data.includes('https://Safe_website.com')) {
@@ -104,6 +105,37 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
           <Text style={styles.iconText}>Open</Text>
         </TouchableOpacity>
       </View>
+      <View style={styles.divider} />
+      <Text style={styles.moreInfoText}>More Information</Text>
+      <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
+        <Ionicons name="shield-checkmark" size={24} color="#ff69b4" />
+        <Text style={styles.moreInfoButtonText}>Security Headers</Text>
+        <Ionicons name="chevron-forward" size={24} color="#ff69b4" />
+      </TouchableOpacity>
+
+      <Modal
+        transparent={true}
+        visible={isModalVisible}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Security Headers</Text>
+            <Text style={styles.modalText}>Name: Strict-Transport-Security</Text>
+            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Name: X-Frame-Options</Text>
+            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Name: X-Content-Type-Options</Text>
+            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Name: Content-Security-Policy</Text>
+            <Text style={styles.modalText}>Value: _</Text>
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -180,10 +212,66 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     marginTop: 5,
   },
+  moreInfoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginVertical: 10,
+  },
+  moreInfoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    backgroundColor: '#ffe6f0',
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  moreInfoButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    marginLeft: 10,
+  },
   closeButton: {
     position: 'absolute',
     top: 10,
     right: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 5,
+    textAlign: 'left',
+    width: '100%',
+  },
+  closeModalButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#ff69b4',
+    borderRadius: 5,
+  },
+  closeModalButtonText: {
+    fontSize: 16,
+    color: '#fff',
   },
 });
 
