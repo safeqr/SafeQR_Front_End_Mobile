@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal } from 'react-native';
 import { QRCodeContext, QRCode } from '../types'; // Import QRCode type
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,8 @@ const HistoryScreen: React.FC = () => {
   const [selectedData, setSelectedData] = useState<string | null>(null);
   const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
   const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
   const toggleBookmark = (index: number) => {
     setQrCodes((prev: QRCode[]) => {
@@ -23,11 +25,15 @@ const HistoryScreen: React.FC = () => {
     });
   };
 
-  const deleteQRCode = (index: number) => {
-    setQrCodes((prev: QRCode[]) => {
-      const originalIndex = prev.length - 1 - index; // Compute the original index
-      return prev.filter((_, i) => i !== originalIndex);
-    });
+  const deleteQRCode = () => {
+    if (indexToDelete !== null) {
+      setQrCodes((prev: QRCode[]) => {
+        const originalIndex = prev.length - 1 - indexToDelete; // Compute the original index
+        return prev.filter((_, i) => i !== originalIndex);
+      });
+      setIndexToDelete(null);
+      setIsModalVisible(false);
+    }
   };
 
   const filteredQrCodes = (showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse());
@@ -35,6 +41,11 @@ const HistoryScreen: React.FC = () => {
   const handleItemPress = (item: any) => {
     setSelectedData(item.data);
     setSelectedScanResult(item.scanResult);
+  };
+
+  const confirmDelete = (index: number) => {
+    setIndexToDelete(index);
+    setIsModalVisible(true);
   };
 
   return (
@@ -58,8 +69,8 @@ const HistoryScreen: React.FC = () => {
           return (
             <View style={styles.itemContainer}>
               <View style={styles.itemLeft}>
-                <Ionicons name="qr-code-outline" size={24} color="#ff69b4" style={styles.qrIcon} />
-                <TouchableOpacity onPress={() => handleItemPress(item)}>
+                <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.itemContent}>
+                  <Image source={require('../assets/ScanIcon3.png')} style={styles.scanIcon} />
                   <Text style={styles.dataText}>{itemData}</Text>
                 </TouchableOpacity>
                 <Text style={styles.dateText}>{new Date().toLocaleDateString('en-GB', {
@@ -70,7 +81,7 @@ const HistoryScreen: React.FC = () => {
                 <TouchableOpacity onPress={() => toggleBookmark(index)}>
                   <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteQRCode(index)}>
+                <TouchableOpacity onPress={() => confirmDelete(index)}>
                   <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
                 </TouchableOpacity>
               </View>
@@ -80,6 +91,27 @@ const HistoryScreen: React.FC = () => {
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.flatListContent}
       />
+      <Modal
+        transparent={true}
+        visible={isModalVisible}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Are you sure?</Text>
+            <Text style={styles.modalText}>If bookmarked, this will be removed from both History and Bookmarks.</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalButton} onPress={deleteQRCode}>
+                <Text style={styles.modalButtonText}>Yes, Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>
+                <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -117,23 +149,67 @@ const styles = StyleSheet.create({
   itemLeft: {
     flexDirection: 'column',
   },
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   itemRight: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   dataText: {
     fontSize: 16,
     color: '#000',
-    marginBottom: 5,
+    marginLeft: 10,
   },
   dateText: {
     fontSize: 12,
     color: '#000',
+    marginLeft: 10,
   },
-  qrIcon: {
-    marginBottom: 5,
+  scanIcon: {
+    width: 40,
+    height: 40,
   },
   flatListContent: {
     paddingBottom: 100,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: '#000',
   },
 });
 
