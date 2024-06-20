@@ -17,7 +17,7 @@ interface ScanResult {
 
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     if (data.includes('https://Safe_website.com')) {
@@ -74,7 +74,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
   return (
     <View style={styles.dataBox}>
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
-        <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
+        <Ionicons name="close-circle-outline" size={18} color="#ff69b4" />
       </TouchableOpacity>
       <View style={styles.row}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
@@ -83,7 +83,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       <View style={styles.divider} />
       <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
       <View style={styles.qrContainer}>
-        <QRCode value={extractedData} size={100} backgroundColor="transparent" />
+        <QRCode value={extractedData} size={75} backgroundColor="transparent" />
         <Text style={[styles.resultText, { color: getResultColor() }]}>
           Result: {getResultText()}
         </Text>
@@ -97,25 +97,24 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       <Text style={styles.checksText}>Redirects: {scanResult ? scanResult.redirects : 'N/A'}</Text>
       <View style={styles.iconContainer}>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="share-social" size={24} color="#2196F3" />
+          <Ionicons name="share-social" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Share</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="open" size={24} color="#2196F3" />
+          <Ionicons name="open" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Open</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.divider} />
       <Text style={styles.moreInfoText}>More Information</Text>
       <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
-        <Ionicons name="shield-checkmark" size={24} color="#ff69b4" />
+        <Ionicons name="shield-checkmark" size={18} color="#ff69b4" />
         <Text style={styles.moreInfoButtonText}>Security Headers</Text>
-        <Ionicons name="chevron-forward" size={24} color="#ff69b4" />
+        <Ionicons name="chevron-forward" size={18} color="#ff69b4" />
       </TouchableOpacity>
-
       <Modal
-        transparent={true}
         visible={isModalVisible}
+        transparent={true}
         animationType="fade"
         onRequestClose={() => setIsModalVisible(false)}
       >
@@ -123,13 +122,13 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Security Headers</Text>
             <Text style={styles.modalText}>Name: Strict-Transport-Security</Text>
-            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Value: max-age=31536000; includeSubDomains</Text>
             <Text style={styles.modalText}>Name: X-Frame-Options</Text>
-            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Value: DENY</Text>
             <Text style={styles.modalText}>Name: X-Content-Type-Options</Text>
-            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Value: nosniff</Text>
             <Text style={styles.modalText}>Name: Content-Security-Policy</Text>
-            <Text style={styles.modalText}>Value: _</Text>
+            <Text style={styles.modalText}>Value: default-src 'self'</Text>
             <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
               <Text style={styles.closeModalButtonText}>Close</Text>
             </TouchableOpacity>
@@ -146,97 +145,101 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scan_icon: {
-    width: 50,
-    height: 50,
-    marginRight: 8,
+    width: 37.5,
+    height: 37.5,
+    marginRight: 6,
   },
   payload: {
-    fontSize: 20,
+    fontSize: 15,
     color: '#000',
-    marginBottom: 1,
+    flex: 1,  // Allow text to use available space
   },
   dataBox: {
-    padding: 20,
+    padding: 15,
     backgroundColor: '#ffe6f0',
-    borderRadius: 10,
+    borderRadius: 7.5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1.5 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3.75,
+    elevation: 2.25,
     zIndex: 1,
+    //width: '95%',  // Ensure the box uses the full width of its container
   },
   qrContainer: {
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 7.5,
   },
   blankLine: {
-    height: 20,
+    height: 15,
   },
   divider: {
-    height: 1,
+    height: 0.75,
     backgroundColor: '#ddd',
-    marginVertical: 10,
+    marginVertical: 7.5,
     alignSelf: 'stretch',
   },
   timestampText: {
-    fontSize: 12,
+    fontSize: 9,
     color: '#000',
-    marginBottom: 10,
+    marginBottom: 7.5,
   },
   resultText: {
-    fontSize: 16,
-    marginBottom: 10,
+    fontSize: 12,
+    marginBottom: 7.5,
     textAlign: 'center',
   },
   typeText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#000',
-    marginBottom: 10,
+    marginBottom: 7.5,
   },
   checksText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#000',
-    marginBottom: 5,
+    marginBottom: 3.75,
   },
   iconContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: 7.5,
   },
   iconButton: {
     flexDirection: 'column',
     alignItems: 'center',
+    flex: 1,
   },
   iconText: {
     color: '#2196F3',
-    marginTop: 5,
+    marginTop: 3.75,
+    textAlign: 'center',
+    fontSize: 12,
   },
   moreInfoText: {
-    fontSize: 18,
+    fontSize: 13.5,
     fontWeight: 'bold',
     color: '#000',
-    marginVertical: 10,
+    marginVertical: 7.5,
   },
   moreInfoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 7.5,
+    paddingHorizontal: 11.25,
     backgroundColor: '#ffe6f0',
-    borderRadius: 10,
-    marginTop: 10,
+    borderRadius: 7.5,
+    marginTop: 7.5,
   },
   moreInfoButtonText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 12,
     color: '#000',
-    marginLeft: 10,
+    marginLeft: 7.5,
   },
   closeButton: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 7.5,
+    right: 7.5,
   },
   modalContainer: {
     flex: 1,
@@ -247,30 +250,30 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '80%',
     backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: 7.5,
+    padding: 15,
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 7.5,
   },
   modalText: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: 12,
+    marginBottom: 3.75,
     textAlign: 'left',
     width: '100%',
   },
   closeModalButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginTop: 15,
+    paddingVertical: 7.5,
+    paddingHorizontal: 15,
     backgroundColor: '#ff69b4',
-    borderRadius: 5,
+    borderRadius: 3.75,
   },
   closeModalButtonText: {
-    fontSize: 16,
+    fontSize: 12,
     color: '#fff',
   },
 });

@@ -30,7 +30,7 @@ const determineDataType = (data: string): string => {
 
 // Function to handle VirusTotal scanning
 const processWithVirusTotal = async (data: string) => {
-  const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
+  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e';
   const url = 'https://www.virustotal.com/vtapi/v2/url/scan';
   const params = {
     apikey: apiKey,
@@ -48,7 +48,7 @@ const processWithVirusTotal = async (data: string) => {
 
 // Function to get VirusTotal scan results
 const getVirusTotalResults = async (scanId: string) => {
-  const apiKey = 'YOUR_VIRUSTOTAL_API_KEY';
+  const apiKey = '3566a17933bb36dd97cb35e84d0446e5ab8ad623e6de968d34b655c79485251e';
   const url = 'https://www.virustotal.com/vtapi/v2/url/report';
   const params = {
     apikey: apiKey,

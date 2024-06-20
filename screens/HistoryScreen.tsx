@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dataText: {
-    fontSize: 16,
+    fontSize: 11,
     color: '#000',
     marginLeft: 10,
   },
