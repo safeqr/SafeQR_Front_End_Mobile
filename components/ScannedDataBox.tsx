@@ -20,27 +20,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
-    if (data.includes('https://Safe_website.com')) {
-      setScanResult({
-        secureConnection: true,
-        virusTotalCheck: true,
-        redirects: 0,
-      });
-    } else if (data.includes('https://unknown_website.com')) {
-      setScanResult({
-        secureConnection: true,
-        virusTotalCheck: true,
-        redirects: 2,
-      });
-    } else if (data.includes('http://danger_website.com')) {
-      setScanResult({
-        secureConnection: false,
-        virusTotalCheck: false,
-        redirects: 3,
-      });
-    } else {
-      setScanResult(null);
-    }
+    // Assuming scanResult is directly related to data
+    setScanResult({
+      secureConnection: data.includes('https'), // Example logic
+      virusTotalCheck: !data.includes('danger'), // Example logic
+      redirects: data.includes('redirect') ? 1 : 0, // Example logic
+    });
   }, [data]);
 
   const getResultText = () => {
@@ -69,8 +54,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
     }
   };
 
-  const extractedData = data.split('\n')[1]?.split('Data: ')[1] || '';
-
   return (
     <View style={styles.dataBox}>
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
@@ -78,12 +61,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       </TouchableOpacity>
       <View style={styles.row}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
-        <Text style={styles.payload}>{extractedData}</Text>
+        <Text style={styles.payload}>{data}</Text>
       </View>
       <View style={styles.divider} />
       <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
       <View style={styles.qrContainer}>
-        <QRCode value={extractedData} size={75} backgroundColor="transparent" />
+        <QRCode value={data || 'No Data'} size={75} backgroundColor="transparent" />
         <Text style={[styles.resultText, { color: getResultColor() }]}>
           Result: {getResultText()}
         </Text>
@@ -164,7 +147,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3.75,
     elevation: 2.25,
     zIndex: 1,
-    //width: '95%',  // Ensure the box uses the full width of its container
   },
   qrContainer: {
     alignItems: 'center',
