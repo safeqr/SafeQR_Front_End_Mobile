@@ -84,10 +84,16 @@ const HistoryScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header for toggling between History and Bookmarks */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => setShowBookmarks(false)}>
+        <TouchableOpacity onPress={() => {
+          setShowBookmarks(false);
+          clearSelectedData();
+        }}>
           <Text style={!showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>History</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowBookmarks(true)}>
+        <TouchableOpacity onPress={() => {
+          setShowBookmarks(true);
+          clearSelectedData();
+        }}>
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
