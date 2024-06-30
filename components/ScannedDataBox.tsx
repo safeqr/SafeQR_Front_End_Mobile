@@ -18,6 +18,8 @@ interface ScanResult {
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  console.log("ScannedDataBox -> Data", data);
+  console.log("DataType", dataType);
 
   useEffect(() => {
     // Assuming scanResult is directly related to data

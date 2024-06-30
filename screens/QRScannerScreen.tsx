@@ -52,6 +52,8 @@ const QRScannerScreen: React.FC = () => {
     };
 
     setScannedData(payload);
+    console.log("handlePayload -> payload", payload);
+    console.log("handlePayload -> type", type);
     setDataType(type);
     setQrCodes([...qrCodes, qrCode]);
   };
@@ -68,7 +70,7 @@ const QRScannerScreen: React.FC = () => {
         },
       });
       console.log('Response from backend:', response.data);
-      return response.data.type;
+      return response.data;
     } catch (error) {
       console.error('Error detecting QR code type:', error);
       return 'UNKNOWN';
@@ -85,6 +87,7 @@ const QRScannerScreen: React.FC = () => {
 
   const readQRFromImage = async () => {
     clearScanDataInternal();
+    console.log("readingQRFromImage");
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false, // Don't ask user to crop images
@@ -96,6 +99,8 @@ const QRScannerScreen: React.FC = () => {
         const scannedResult = await scanFromURLAsync(result.assets[0].uri);
         if (scannedResult && scannedResult[0] && scannedResult[0].data) {
           handlePayload(scannedResult[0].data);
+          // Not sure why scannedResult.data is undefined but access as array work, KIV
+          console.log('readingQRFromImage -> scannedResult[0].data:', scannedResult[0].data);
         } else {
           setScannedData("No QR Code Found");
           setTimeout(() => setScannedData(""), 4000);

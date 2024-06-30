@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, BackHandler, Modal } from 'react-native';
 import { QRCodeContext, QRCode } from '../types'; // Import QRCode type
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,24 @@ const HistoryScreen: React.FC = () => {
   const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (selectedData) {
+        setSelectedData(null);
+        setSelectedScanResult(null);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [selectedData]);
 
   const toggleBookmark = (index: number) => {
     setQrCodes((prev: QRCode[]) => {
