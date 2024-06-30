@@ -12,6 +12,7 @@ const HistoryScreen: React.FC = () => {
 
   const [selectedData, setSelectedData] = useState<string | null>(null);
   const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null); // Add state for selectedType
   const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
@@ -21,6 +22,7 @@ const HistoryScreen: React.FC = () => {
       if (selectedData) {
         setSelectedData(null);
         setSelectedScanResult(null);
+        setSelectedType(null);
         return true;
       }
       return false;
@@ -39,6 +41,7 @@ const HistoryScreen: React.FC = () => {
       const originalIndex = prev.length - 1 - index; // Compute the original index
       const newQrCodes = [...prev];
       newQrCodes[originalIndex].bookmarked = !newQrCodes[originalIndex].bookmarked;
+      console.log('Toggled bookmark for QR code at index:', originalIndex);
       return newQrCodes;
     });
   };
@@ -47,6 +50,7 @@ const HistoryScreen: React.FC = () => {
     if (indexToDelete !== null) {
       setQrCodes((prev: QRCode[]) => {
         const originalIndex = prev.length - 1 - indexToDelete; // Compute the original index
+        console.log('Deleting QR code at index:', originalIndex);
         return prev.filter((_, i) => i !== originalIndex);
       });
       setIndexToDelete(null);
@@ -59,20 +63,26 @@ const HistoryScreen: React.FC = () => {
   const handleItemPress = (item: any) => {
     setSelectedData(item.data);
     setSelectedScanResult(item.scanResult);
+    setSelectedType(item.type); // Set the selected type
+    console.log('Selected QR code data:', item.data);
+    console.log('Selected QR code type:', item.type);
   };
 
   const confirmDelete = (index: number) => {
     setIndexToDelete(index);
     setIsModalVisible(true);
+    console.log('Confirm delete for QR code at index:', index);
   };
 
   const clearSelectedData = () => {
     setSelectedData(null);
     setSelectedScanResult(null);
+    setSelectedType(null); // Clear the selected type
   };
 
   return (
     <View style={styles.container}>
+      {/* Header for toggling between History and Bookmarks */}
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => setShowBookmarks(false)}>
           <Text style={!showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>History</Text>
@@ -81,16 +91,18 @@ const HistoryScreen: React.FC = () => {
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
+      {/* Display scanned data details */}
       {selectedData && (
         <View style={styles.scannedDataBoxContainer}>
-          <ScannedDataBox data={selectedData} scanResult={selectedScanResult} dataType="URL" clearScanData={clearSelectedData} />
+          <ScannedDataBox data={selectedData} scanResult={selectedScanResult} dataType={selectedType} clearScanData={clearSelectedData} />
         </View>
       )}
+      {/* List of QR codes */}
       <FlatList
         data={filteredQrCodes}
         renderItem={({ item, index }) => {
-          console.log('item:', item); // Log the item data for debugging
-          const itemData = item.data ? item.data.split('\n')[1]?.split('Data: ')[1] : 'Invalid data';
+          console.log('Rendering QR code item:', item);
+          const itemData = item.data;
           return (
             <View style={styles.itemContainer}>
               <View style={styles.itemLeft}>
@@ -116,6 +128,7 @@ const HistoryScreen: React.FC = () => {
         keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.flatListContent}
       />
+      {/* Modal for delete confirmation */}
       <Modal
         transparent={true}
         visible={isModalVisible}
