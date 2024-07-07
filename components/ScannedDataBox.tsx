@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, Share } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
+import SecureWebView from './SecureWebView'; // Import the SecureWebView component
 
 // Define Props for ScannedDataBox component
 interface ScannedDataBoxProps {
@@ -20,6 +21,8 @@ interface ScanResult {
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isWebViewVisible, setIsWebViewVisible] = useState(false); // State to control WebView modal visibility
+
   console.log("ScannedDataBox -> Data", data);
   console.log("DataType", dataType);
 
@@ -74,6 +77,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
     }
   };
 
+  // Handle opening the data in a sandboxed WebView
+  const handleOpen = () => {
+    setIsWebViewVisible(true);
+    console.log('Opening data in WebView:', data);
+  };
+
   return (
     <View style={styles.dataBox}>
       {/* Close button */}
@@ -112,7 +121,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
           <Ionicons name="share-social" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Share</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={handleOpen}>
           <Ionicons name="open" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Open</Text>
         </TouchableOpacity>
@@ -149,6 +158,21 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
               <Text style={styles.closeModalButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* Modal for SecureWebView */}
+      <Modal
+        visible={isWebViewVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsWebViewVisible(false)}
+      >
+        <View style={styles.webViewContainer}>
+          <TouchableOpacity style={styles.closeWebViewButton} onPress={() => setIsWebViewVisible(false)}>
+            <Ionicons name="close-circle-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+          <SecureWebView url={data} />
         </View>
       </Modal>
     </View>
@@ -290,6 +314,20 @@ const styles = StyleSheet.create({
   closeModalButtonText: {
     fontSize: 12,
     color: '#fff',
+  },
+  webViewContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  webView: {
+    flex: 1,
+    marginTop: 40,
+  },
+  closeWebViewButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
   },
 });
 
