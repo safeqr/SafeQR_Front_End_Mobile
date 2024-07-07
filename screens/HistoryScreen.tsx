@@ -1,18 +1,19 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, BackHandler, Modal } from 'react-native';
-import { QRCodeContext, QRCode } from '../types'; // Import QRCode type
+import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
+import { RootState } from '../store';
+import { QRCode } from '../types';
+import { toggleBookmark, deleteQRCode } from '../actions/qrCodeActions';
 
 const HistoryScreen: React.FC = () => {
-  const qrCodeContext = useContext(QRCodeContext);
-
-  const qrCodes = qrCodeContext?.qrCodes || [];
-  const setQrCodes = qrCodeContext?.setQrCodes || (() => {});
+  const dispatch = useDispatch();
+  const qrCodes = useSelector((state: RootState) => state.qrCodes);
 
   const [selectedData, setSelectedData] = useState<string | null>(null);
   const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null); // Add state for selectedType
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
@@ -28,42 +29,17 @@ const HistoryScreen: React.FC = () => {
       return false;
     };
 
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction
-    );
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
     return () => backHandler.remove();
   }, [selectedData]);
 
-  const toggleBookmark = (index: number) => {
-    setQrCodes((prev: QRCode[]) => {
-      const originalIndex = prev.length - 1 - index; // Compute the original index
-      const newQrCodes = [...prev];
-      newQrCodes[originalIndex].bookmarked = !newQrCodes[originalIndex].bookmarked;
-      console.log('Toggled bookmark for QR code at index:', originalIndex);
-      return newQrCodes;
-    });
-  };
+  const filteredQrCodes = showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse();
 
-  const deleteQRCode = () => {
-    if (indexToDelete !== null) {
-      setQrCodes((prev: QRCode[]) => {
-        const originalIndex = prev.length - 1 - indexToDelete; // Compute the original index
-        console.log('Deleting QR code at index:', originalIndex);
-        return prev.filter((_, i) => i !== originalIndex);
-      });
-      setIndexToDelete(null);
-      setIsModalVisible(false);
-    }
-  };
-
-  const filteredQrCodes = (showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse());
-
-  const handleItemPress = (item: any) => {
+  const handleItemPress = (item: QRCode) => {
     setSelectedData(item.data);
     setSelectedScanResult(item.scanResult);
-    setSelectedType(item.type); // Set the selected type
+    setSelectedType(item.type);
     console.log('Selected QR code data:', item.data);
     console.log('Selected QR code type:', item.type);
   };
@@ -77,23 +53,17 @@ const HistoryScreen: React.FC = () => {
   const clearSelectedData = () => {
     setSelectedData(null);
     setSelectedScanResult(null);
-    setSelectedType(null); // Clear the selected type
+    setSelectedType(null);
   };
 
   return (
     <View style={styles.container}>
       {/* Header for toggling between History and Bookmarks */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => {
-          setShowBookmarks(false);
-          clearSelectedData();
-        }}>
+        <TouchableOpacity onPress={() => { setShowBookmarks(false); clearSelectedData(); }}>
           <Text style={!showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>History</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          setShowBookmarks(true);
-          clearSelectedData();
-        }}>
+        <TouchableOpacity onPress={() => { setShowBookmarks(true); clearSelectedData(); }}>
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
@@ -121,7 +91,7 @@ const HistoryScreen: React.FC = () => {
                 })}</Text>
               </View>
               <View style={styles.itemRight}>
-                <TouchableOpacity onPress={() => toggleBookmark(index)}>
+                <TouchableOpacity onPress={() => dispatch(toggleBookmark(index))}>
                   <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => confirmDelete(index)}>
@@ -146,7 +116,7 @@ const HistoryScreen: React.FC = () => {
             <Text style={styles.modalTitle}>Are you sure?</Text>
             <Text style={styles.modalText}>If bookmarked, this will be removed from both History and Bookmarks.</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={deleteQRCode}>
+              <TouchableOpacity style={styles.modalButton} onPress={() => dispatch(deleteQRCode(indexToDelete))}>
                 <Text style={styles.modalButtonText}>Yes, Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>

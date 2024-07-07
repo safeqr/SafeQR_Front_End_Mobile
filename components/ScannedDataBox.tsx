@@ -3,14 +3,12 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-na
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 
-// Define Props for ScannedDataBox component
 interface ScannedDataBoxProps {
   data: string;
   dataType: string;
   clearScanData: () => void;
 }
 
-// Define ScanResult interface
 interface ScanResult {
   secureConnection: boolean;
   virusTotalCheck: boolean;
@@ -20,21 +18,18 @@ interface ScanResult {
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  console.log("ScannedDataBox -> Data", data);
+  console.log("DataType", dataType);
 
-  console.log("ScannedDataBox -> Data:", data);
-  console.log("DataType:", dataType);
-
-  // Set scan result based on data
   useEffect(() => {
+    // Assuming scanResult is directly related to data
     setScanResult({
       secureConnection: data.includes('https'), // Example logic
       virusTotalCheck: !data.includes('danger'), // Example logic
       redirects: data.includes('redirect') ? 1 : 0, // Example logic
     });
-    console.log("Scan result set:", scanResult);
   }, [data]);
 
-  // Determine the result text based on scan result
   const getResultText = () => {
     if (!scanResult) {
       return 'UNKNOWN';
@@ -48,7 +43,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
     }
   };
 
-  // Determine the result color based on result text
   const getResultColor = () => {
     const result = getResultText();
     if (result === 'DANGEROUS') {
@@ -64,12 +58,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
 
   return (
     <View style={styles.dataBox}>
-      {/* Close button */}
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
         <Ionicons name="close-circle-outline" size={18} color="#ff69b4" />
       </TouchableOpacity>
-      
-      {/* Display scanned data */}
       <View style={styles.row}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
         <Text style={styles.payload}>{data}</Text>
@@ -83,18 +74,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
         </Text>
       </View>
       <View style={styles.divider} />
-      
-      {/* Display data type */}
       <Text style={styles.typeText}>Type: {dataType}</Text>
       <Text style={styles.blankLine}>{'\n'}</Text>
-      
-      {/* Display scan checks */}
       <Text style={styles.checksText}>Checks</Text>
       <Text style={styles.checksText}>Secure Connection: {scanResult?.secureConnection ? '✔️' : '✘'}</Text>
       <Text style={styles.checksText}>Virus Total Check: {scanResult?.virusTotalCheck ? '✔️' : '✘'}</Text>
       <Text style={styles.checksText}>Redirects: {scanResult ? scanResult.redirects : 'N/A'}</Text>
-      
-      {/* Action buttons */}
       <View style={styles.iconContainer}>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="share-social" size={18} color="#2196F3" />
@@ -106,16 +91,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
         </TouchableOpacity>
       </View>
       <View style={styles.divider} />
-      
-      {/* More information button */}
       <Text style={styles.moreInfoText}>More Information</Text>
       <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
         <Ionicons name="shield-checkmark" size={18} color="#ff69b4" />
         <Text style={styles.moreInfoButtonText}>Security Headers</Text>
         <Ionicons name="chevron-forward" size={18} color="#ff69b4" />
       </TouchableOpacity>
-      
-      {/* Modal for security headers */}
       <Modal
         visible={isModalVisible}
         transparent={true}

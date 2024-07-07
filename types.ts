@@ -1,7 +1,8 @@
-import { createContext } from "react";
+import { createContext } from 'react';
 
 export interface QRCode {
   data: string;
+  type: string;
   bookmarked: boolean;
   scanResult: {
     secureConnection: boolean;
@@ -10,12 +11,7 @@ export interface QRCode {
   };
 }
 
-interface QRCodeContextProps {
+export const QRCodeContext = createContext<{
   qrCodes: QRCode[];
-  setQrCodes: (codes: QRCode[]) => void;
-  setCurrentScannedData?: (data: string) => void;
-  toggleBookmark?: (index: number) => void;
-  deleteQRCode?: (index: number) => void;
-}
-
-export const QRCodeContext = createContext<QRCodeContextProps | null>(null);
+  setQrCodes: React.Dispatch<React.SetStateAction<QRCode[]>>;
+} | null>(null);
