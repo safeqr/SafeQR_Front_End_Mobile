@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
+import { useDispatch } from 'react-redux';
 import axios from 'axios'; // For URL calls
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
-import { useDispatch } from 'react-redux';
 import { addQRCode } from '../actions/qrCodeActions';
 
-const QRScannerScreen: React.FC = () => {
+interface QRScannerScreenProps {
+  clearScanData: () => void;
+}
+
+// Main Function
+const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   const navigation = useNavigation(); // call Navigation bar
   const [showSplash, setShowSplash] = useState<boolean>(true); // call splash screen
   const dispatch = useDispatch();
@@ -20,45 +25,52 @@ const QRScannerScreen: React.FC = () => {
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
 
+  // Request Camera Permission and initialize the app
   useEffect(() => {
     const initializeApp = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
       setShowSplash(false);
+      console.log("Camera permissions initialized");
     };
 
     initializeApp();
   }, []);
 
+  // Clear Scan Data
   const clearScanDataInternal = () => {
     setScannedData('');
     setScanned(false);
     setDataType('');
+    console.log("Scan data cleared");
   };
 
+  // Handle QR Code Payload
   const handlePayload = async (payload: string) => {
     setScanned(true);
-    console.log("Scanning Competed payload is :", payload);
+    console.log("Scanning Completed. Payload is:", payload);
     const type = await sendToAPIServer(payload);
 
     const qrCode = {
       data: payload,
       type,
-      bookmarked: false,
       scanResult: {
         secureConnection: true, // Placeholder, replace with actual logic
         virusTotalCheck: true,  // Placeholder, replace with actual logic
         redirects: 0           // Placeholder, replace with actual logic
-      }
+      },
+      bookmarked: false, // Add the bookmarked property
     };
 
     setScannedData(payload);
-    console.log("handlePayload -> payload", payload);
-    console.log("handlePayload -> type", type);
+    console.log("Payload received:", payload);
+    console.log("Type received from server:", type);
     setDataType(type);
-    dispatch(addQRCode(qrCode));
+    dispatch(addQRCode(qrCode)); // Dispatch action to save QR code data
+    console.log("QR code data added to history");
   };
 
+  // Send QR Code Data to Backend Server
   const sendToAPIServer = async (payload: string): Promise<string> => {
     console.log('Sending QR code data to backend:', payload);
 
@@ -78,17 +90,23 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
+  // Toggle Torch (Flashlight)
   const toggleTorch = () => {
     setEnableTorch((prev) => !prev);
+    console.log("Torch toggled:", enableTorch ? "off" : "on");
   };
 
+  // Handle Test Scan
   const handleTestScan = () => {
     handlePayload('TEST123');
+    console.log("Test scan executed");
   };
 
+  // Read QR Code from Image
   const readQRFromImage = async () => {
     clearScanDataInternal();
-    console.log("readingQRFromImage");
+    console.log("Reading QR code from image");
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false, // Don't ask user to crop images
@@ -101,10 +119,11 @@ const QRScannerScreen: React.FC = () => {
         if (scannedResult && scannedResult[0] && scannedResult[0].data) {
           handlePayload(scannedResult[0].data);
           // Not sure why scannedResult.data is undefined but access as array work, KIV
-          console.log('readingQRFromImage -> scannedResult[0].data:', scannedResult[0].data);
+          console.log('QR code data from image:', scannedResult[0].data);
         } else {
           setScannedData("No QR Code Found");
           setTimeout(() => setScannedData(""), 4000);
+          console.log("No QR code found in the selected image");
         }
       } catch (error) {
         console.error('Error scanning QR code from image:', error);
@@ -113,9 +132,11 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
+  // Clear scan data when screen is focused
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       clearScanDataInternal();
+      console.log("Screen focused, scan data cleared");
     });
     return unsubscribe;
   }, [navigation]);
