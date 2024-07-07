@@ -15,14 +15,12 @@ interface AppNavigatorProps {
 
 // Main navigation component
 const AppNavigator = ({ clearScanData }: AppNavigatorProps) => {
-  const renderCustomTabBar = (props) => <CustomTabBar {...props} clearScanData={clearScanData} />;
-
   return (
     // Wrap the navigator in a NavigationContainer to manage the navigation tree
     <NavigationContainer>
       
       {/* Define the tab navigator with custom tab bar and initial route */}
-      <Tab.Navigator initialRouteName="QR Scanner" tabBar={renderCustomTabBar}>
+      <Tab.Navigator initialRouteName="QR Scanner" tabBar={props => <CustomTabBar {...props} clearScanData={clearScanData} />}>
 
         {/* Define each tab with a name and corresponding component */}
         <Tab.Screen name="History" component={HistoryScreen} />
