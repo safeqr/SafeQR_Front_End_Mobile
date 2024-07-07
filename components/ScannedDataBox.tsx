@@ -1,47 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, Share } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
-import SecureWebView from './SecureWebView'; // Import the SecureWebView component
+import * as Sharing from 'expo-sharing';
+import { WebView } from 'react-native-webview';
 
 // Define Props for ScannedDataBox component
 interface ScannedDataBoxProps {
   data: string;
   dataType: string;
   clearScanData: () => void;
+  scanResult: {
+    secureConnection: boolean;
+    virusTotalCheck: boolean;
+    redirects: number;
+  };
 }
 
-// Define ScanResult interface
-interface ScanResult {
-  secureConnection: boolean;
-  virusTotalCheck: boolean;
-  redirects: number;
-}
-
-const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData }) => {
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData, scanResult }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isWebViewVisible, setIsWebViewVisible] = useState(false); // State to control WebView modal visibility
-
+  const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   console.log("ScannedDataBox -> Data", data);
   console.log("DataType", dataType);
 
-  // Set scan result based on data
   useEffect(() => {
-    // Assuming scanResult is directly related to data
-    setScanResult({
-      secureConnection: data.includes('https'), // Example logic
-      virusTotalCheck: !data.includes('danger'), // Example logic
-      redirects: data.includes('redirect') ? 1 : 0, // Example logic
-    });
     console.log("Scan result set:", scanResult);
   }, [data]);
 
   // Determine the result text based on scan result
   const getResultText = () => {
-    if (!scanResult) {
-      return 'UNKNOWN';
-    }
     if (!scanResult.secureConnection && !scanResult.virusTotalCheck) {
       return 'DANGEROUS';
     } else if (scanResult.redirects > 0) {
@@ -65,22 +52,16 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
     }
   };
 
-  // Handle sharing the data
-  const handleShare = async () => {
+  const shareQRCodeData = async () => {
     try {
-      await Share.share({
-        message: data,
-      });
-      console.log('Data shared:', data);
+      await Sharing.shareAsync(data);
     } catch (error) {
-      console.error('Error sharing the data:', error);
+      console.error('Error sharing QR code data:', error);
     }
   };
 
-  // Handle opening the data in a sandboxed WebView
-  const handleOpen = () => {
+  const openWebView = () => {
     setIsWebViewVisible(true);
-    console.log('Opening data in WebView:', data);
   };
 
   return (
@@ -111,17 +92,17 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       
       {/* Display scan checks */}
       <Text style={styles.checksText}>Checks</Text>
-      <Text style={styles.checksText}>Secure Connection: {scanResult?.secureConnection ? '✔️' : '✘'}</Text>
-      <Text style={styles.checksText}>Virus Total Check: {scanResult?.virusTotalCheck ? '✔️' : '✘'}</Text>
-      <Text style={styles.checksText}>Redirects: {scanResult ? scanResult.redirects : 'N/A'}</Text>
+      <Text style={styles.checksText}>Secure Connection: {scanResult.secureConnection ? '✔️' : '✘'}</Text>
+      <Text style={styles.checksText}>Virus Total Check: {scanResult.virusTotalCheck ? '✔️' : '✘'}</Text>
+      <Text style={styles.checksText}>Redirects: {scanResult.redirects}</Text>
       
       {/* Action buttons */}
       <View style={styles.iconContainer}>
-        <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+        <TouchableOpacity style={styles.iconButton} onPress={shareQRCodeData}>
           <Ionicons name="share-social" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Share</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={handleOpen}>
+        <TouchableOpacity style={styles.iconButton} onPress={openWebView}>
           <Ionicons name="open" size={18} color="#2196F3" />
           <Text style={styles.iconText}>Open</Text>
         </TouchableOpacity>
@@ -160,19 +141,26 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
           </View>
         </View>
       </Modal>
-
-      {/* Modal for SecureWebView */}
       <Modal
         visible={isWebViewVisible}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setIsWebViewVisible(false)}
       >
-        <View style={styles.webViewContainer}>
-          <TouchableOpacity style={styles.closeWebViewButton} onPress={() => setIsWebViewVisible(false)}>
-            <Ionicons name="close-circle-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-          <SecureWebView url={data} />
+        <View style={styles.modalContainer}>
+          <View style={styles.webViewContainer}>
+            <WebView
+              source={{ uri: data }}
+              javaScriptEnabled={false}
+              domStorageEnabled={false}
+              allowFileAccess={false}
+              originWhitelist={['*']}
+              onShouldStartLoadWithRequest={(request) => true}
+            />
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsWebViewVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </View>
@@ -316,18 +304,11 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   webViewContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  webView: {
-    flex: 1,
-    marginTop: 40,
-  },
-  closeWebViewButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 1,
+    width: '100%',
+    height: '80%',
+    backgroundColor: 'white',
+    borderRadius: 7.5,
+    overflow: 'hidden'
   },
 });
 

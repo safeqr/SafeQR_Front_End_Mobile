@@ -1,29 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
-import { useDispatch } from 'react-redux';
+import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
-import { addQRCode } from '../actions/qrCodeActions';
-
-interface QRScannerScreenProps {
-  clearScanData: () => void;
-}
+import { useDispatch } from 'react-redux';
+import { addQRCode } from '../actions/qrCodeActions'; // Assuming you have actions defined for Redux
+import { detectQRCodeType, verifyURL, checkRedirects } from '../api/qrCodeAPI'; // Import utility functions
 
 // Main Function
-const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
+const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
   const navigation = useNavigation(); // call Navigation bar
+  const dispatch = useDispatch(); // Use dispatch for Redux actions
+
   const [showSplash, setShowSplash] = useState<boolean>(true); // call splash screen
-  const dispatch = useDispatch();
+  const qrCodeContext = useContext(QRCodeContext); // From ./types.ts
+  const { qrCodes, setQrCodes } = qrCodeContext || { qrCodes: [], setQrCodes: () => {} };
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState<boolean>(false);
   const [scannedData, setScannedData] = useState<string>(''); // State for QR scanned Data
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
+
+  // Add state variables for scan results
+  const [secureConnection, setSecureConnection] = useState<boolean | null>(null);
+  const [virusTotalCheck, setVirusTotalCheck] = useState<boolean | null>(null);
+  const [redirects, setRedirects] = useState<number | null>(null);
 
   // Request Camera Permission and initialize the app
   useEffect(() => {
@@ -49,17 +55,24 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
   const handlePayload = async (payload: string) => {
     setScanned(true);
     console.log("Scanning Completed. Payload is:", payload);
-    const type = await sendToAPIServer(payload);
+
+    const type = await detectQRCodeType(payload);
+    const secureConnectionResult = await verifyURL(payload);
+    const redirectResult = await checkRedirects(payload);
+
+    setSecureConnection(secureConnectionResult.isSecure);
+    setVirusTotalCheck(!secureConnectionResult.isMalicious); // Assuming you have virusTotalCheck logic integrated here
+    setRedirects(redirectResult.redirects);
 
     const qrCode = {
       data: payload,
       type,
       scanResult: {
-        secureConnection: true, // Placeholder, replace with actual logic
-        virusTotalCheck: true,  // Placeholder, replace with actual logic
-        redirects: 0           // Placeholder, replace with actual logic
+        secureConnection: secureConnectionResult.isSecure,
+        virusTotalCheck: !secureConnectionResult.isMalicious,
+        redirects: redirectResult.redirects
       },
-      bookmarked: false, // Add the bookmarked property
+      bookmarked: false // by default
     };
 
     setScannedData(payload);
@@ -185,7 +198,16 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ clearScanData }) => {
 
       {scannedData !== '' && (
         <View style={styles.scannedDataBox}>
-          <ScannedDataBox data={scannedData} dataType={dataType} clearScanData={clearScanDataInternal} />
+          <ScannedDataBox
+            data={scannedData}
+            dataType={dataType}
+            clearScanData={clearScanDataInternal}
+            scanResult={{
+              secureConnection,
+              virusTotalCheck,
+              redirects
+            }}
+          />
         </View>
       )}
     </View>
