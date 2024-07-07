@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SafeQR",
-    "slug": "SafeQR",
+    "slug": "safeqr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,12 @@
     },
     "android": {
       "package": "com.piggyinu.safeqr"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "88ad983d-5ca3-44e6-bc1b-8a9a941af992"
+      }
+    },
+    "owner": "piggyinu"
   }
 }

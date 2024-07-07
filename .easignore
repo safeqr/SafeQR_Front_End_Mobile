@@ -1,0 +1,23 @@
+# Ignore node_modules (handled by EAS)
+node_modules/
+
+# Ignore build output
+build/
+dist/
+
+# Ignore local environment files
+.env
+.env.local
+
+# Ignore logs
+*.log
+
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore Amplify generated files (if you want to manage them manually)
+
+
+# Ignore other temporary files
+tmp/
+temp/
