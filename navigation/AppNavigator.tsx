@@ -8,15 +8,21 @@ import CustomTabBar from '../components/CustomTabBar';
 
 // Create a bottom tab navigator
 const Tab = createBottomTabNavigator();
+// Define custom props for CustomTabBar
+interface AppNavigatorProps {
+  clearScanData: () => void;
+}
 
 // Main navigation component
-const AppNavigator = () => {
+const AppNavigator = ({ clearScanData }: AppNavigatorProps) => {
+  const renderCustomTabBar = (props) => <CustomTabBar {...props} clearScanData={clearScanData} />;
+
   return (
     // Wrap the navigator in a NavigationContainer to manage the navigation tree
     <NavigationContainer>
       
       {/* Define the tab navigator with custom tab bar and initial route */}
-      <Tab.Navigator initialRouteName="QR Scanner" tabBar={props => <CustomTabBar {...props} />}>
+      <Tab.Navigator initialRouteName="QR Scanner" tabBar={renderCustomTabBar}>
 
         {/* Define each tab with a name and corresponding component */}
         <Tab.Screen name="History" component={HistoryScreen} />
