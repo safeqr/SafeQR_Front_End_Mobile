@@ -1,10 +1,35 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
 import { QRCodeContext } from '../types';
+import { useAuthenticator } from '@aws-amplify/ui-react-native';
+import { fetchUserAttributes } from 'aws-amplify/auth';
+import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
+
+async function handleFetchUserAttributes() {
+  try {
+    const userAttributes = await fetchUserAttributes();
+    console.log(userAttributes);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function SignOutButton() {
+  const { signOut } = useAuthenticator();
+  return <Button title="Sign Out" onPress={signOut} />;
+}
 
 const SettingsScreen: React.FC = () => {
   const qrCodeContext = useContext(QRCodeContext);
   const setQrCodes = qrCodeContext ? qrCodeContext.setQrCodes : () => {};
+  const { userAttributes } = useFetchUserAttributes();
+
+  const { user } = useAuthenticator((context) => {
+    console.log(context.user);
+    handleFetchUserAttributes();
+    return [context.user]
+  });
+  
 
   const clearHistory = () => {
     setQrCodes([]);
@@ -19,9 +44,16 @@ const SettingsScreen: React.FC = () => {
       <Text style={styles.header}>Settings</Text>
       <View style={styles.profileSection}>
         <Text style={styles.sectionTitle}>Profile</Text>
-        <TouchableOpacity style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Log In</Text>
-        </TouchableOpacity>
+        {user ? (
+          <View>
+            <Text style={styles.userName}>Hello, {userAttributes?.name}</Text>
+            <SignOutButton />
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.loginButton}>
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.divider} />
       <View style={styles.aboutUsSection}>
@@ -42,6 +74,10 @@ const SettingsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  userName: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',

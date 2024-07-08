@@ -7,8 +7,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import { QRCodeContext } from './types';
 import CustomTabBar from './components/CustomTabBar';
 
-import { Button } from 'react-native';
-import { Authenticator, useAuthenticator, withAuthenticator } from '@aws-amplify/ui-react-native';
+import { withAuthenticator } from '@aws-amplify/ui-react-native';
 import { Amplify } from 'aws-amplify';
 import config from './src/aws-exports';
 import { enableScreens } from 'react-native-screens';
@@ -16,11 +15,6 @@ import { enableScreens } from 'react-native-screens';
 enableScreens();
 
 Amplify.configure(config);
-
-function SignOutButton() {
-  const { signOut } = useAuthenticator();
-  return <Button title="Sign Out" onPress={signOut} />;
-}
 
 const Tab = createBottomTabNavigator();
 
