@@ -1,4 +1,4 @@
-package com.piggyinu.safeqr
+package com.safeqr.safeqr
 
 import android.app.Application
 import android.content.res.Configuration

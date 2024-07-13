@@ -27,7 +27,13 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.piggyinu.safeqr</string>
+          <string>com.safeqr.safeqr</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+safeqr</string>
         </array>
       </dict>
     </array>

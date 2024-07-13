@@ -13,13 +13,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.piggyinu.safeqr"
+      "bundleIdentifier": "com.safeqr.safeqr"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "android": {
-      "package": "com.piggyinu.safeqr"
+      "package": "com.safeqr.safeqr"
     },
     "extra": {
       "eas": {

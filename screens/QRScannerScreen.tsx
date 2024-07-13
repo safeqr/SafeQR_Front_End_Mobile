@@ -71,7 +71,7 @@ const QRScannerScreen: React.FC = () => {
     console.log('Sending QR code data to backend:', payload);
 
     try {
-      const response = await axios.post('http://192.168.10.247:8080/v1/api/qrcodetypes/detect', {
+      const response = await axios.post('https://localhost:8443/v1/api/qrcodetypes/detect', {
         data: payload,
       }, {
         headers: {
