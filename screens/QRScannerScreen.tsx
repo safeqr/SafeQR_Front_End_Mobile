@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
 import { Ionicons } from '@expo/vector-icons'; // For icons
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { useDispatch } from 'react-redux';
@@ -25,6 +25,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   const [scannedData, setScannedData] = useState<string>(''); // State for QR scanned Data
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
+  const [cameraVisible, setCameraVisible] = useState<boolean>(true); // State to control camera visibility
 
   // Add state variables for scan results
   const [secureConnection, setSecureConnection] = useState<boolean | null>(null);
@@ -88,7 +89,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     console.log('Sending QR code data to backend:', payload);
 
     try {
-      const response = await axios.post('https://localhost:8443/v1/api/qrcodetypes/detect', {
+      const response = await axios.post('http://192.168.1.30:8080/v1/qrcodetypes/scan', {
         data: payload,
       }, {
         headers: {
@@ -135,8 +136,9 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
           console.log('QR code data from image:', scannedResult[0].data);
         } else {
           setScannedData("No QR Code Found");
-          setTimeout(() => setScannedData(""), 4000);
+          //setTimeout(() => setScannedData(""), 4000);
           console.log("No QR code found in the selected image");
+          Alert.alert('No QR code found in the selected image.');
         }
       } catch (error) {
         console.error('Error scanning QR code from image:', error);
@@ -145,14 +147,28 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     }
   };
 
+  // // Clear scan data when screen is focused
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('focus', () => {
+  //     clearScanDataInternal();
+  //     console.log("Screen focused, scan data cleared");
+  //   });
+  //   return unsubscribe;
+  // }, [navigation]);
+
   // Clear scan data when screen is focused
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+  useFocusEffect(
+    useCallback(() => {
+      setCameraVisible(true);
       clearScanDataInternal();
-      console.log("Screen focused, scan data cleared");
-    });
-    return unsubscribe;
-  }, [navigation]);
+      console.log("Screen focused, scan data cleared and camera enabled");
+
+      return () => {
+        setCameraVisible(false);
+        console.log("Screen unfocused, camera disabled");
+      };
+    }, [navigation])
+  );
 
   if (showSplash) {
     return (
@@ -178,12 +194,14 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
 
       <View style={styles.cameraContainer}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : ({ data }) => handlePayload(data)}
-          barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
-          style={styles.camera}
-          enableTorch={enableTorch}
-        />
+        {cameraVisible && (
+          <CameraView
+            onBarcodeScanned={scanned ? undefined : ({ data }) => handlePayload(data)}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
+            style={styles.camera}
+            enableTorch={enableTorch}
+          />
+        )}
 
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />

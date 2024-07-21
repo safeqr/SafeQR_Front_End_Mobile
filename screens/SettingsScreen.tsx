@@ -1,18 +1,7 @@
-import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
-import { QRCodeContext } from '../types';
 import { useAuthenticator } from '@aws-amplify/ui-react-native';
-import { fetchUserAttributes } from 'aws-amplify/auth';
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
 
-async function handleFetchUserAttributes() {
-  try {
-    const userAttributes = await fetchUserAttributes();
-    console.log(userAttributes);
-  } catch (error) {
-    console.log(error);
-  }
-}
 
 function SignOutButton() {
   const { signOut } = useAuthenticator();
@@ -20,21 +9,7 @@ function SignOutButton() {
 }
 
 const SettingsScreen: React.FC = () => {
-  const qrCodeContext = useContext(QRCodeContext);
-  const setQrCodes = qrCodeContext ? qrCodeContext.setQrCodes : () => {};
   const { userAttributes } = useFetchUserAttributes();
-
-  const { user } = useAuthenticator((context) => {
-    console.log(context.user);
-    handleFetchUserAttributes();
-    return [context.user]
-  });
-  
-
-  const clearHistory = () => {
-    setQrCodes([]);
-  };
-
   const handleLinkPress = (url: string) => {
     Linking.openURL(url);
   };
@@ -44,7 +19,7 @@ const SettingsScreen: React.FC = () => {
       <Text style={styles.header}>Settings</Text>
       <View style={styles.profileSection}>
         <Text style={styles.sectionTitle}>Profile</Text>
-        {user ? (
+        {userAttributes ? (
           <View>
             <Text style={styles.userName}>Hello, {userAttributes?.name}</Text>
             <SignOutButton />

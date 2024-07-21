@@ -1,15 +1,45 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, BackHandler, Modal } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
 import { RootState } from '../store';
-import { QRCode } from '../types';
+import { QRCode, QRCodeType } from '../types';
 import { toggleBookmark, deleteQRCode } from '../actions/qrCodeActions';
+import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
+import useFetchScannedHistories from '../hooks/useFetchScannedHistories';
+import { getScannedHistories } from '../api/qrCodeAPI';
 
 const HistoryScreen: React.FC = () => {
   const dispatch = useDispatch();
-  const qrCodes = useSelector((state: RootState) => state.qrCodes);
+  const qrCodes = useSelector((state: RootState) => state.qrCodes.qrCodes);
+  const { userAttributes } = useFetchUserAttributes();
+  console.log("sub: ", userAttributes?.sub);
+  const [scannedHistories, setScannedHistories] = useState<QRCodeType []| null>(null);
+  const [historiesLoading, setHistoriesLoading] = useState(false);
+  const [historiesError, setHistoriesError] = useState<string | null>(null);
+
+  const fetchHistories = useCallback(async () => {
+    if (!userAttributes?.sub) return;
+
+    try {
+      const data = await getScannedHistories(userAttributes.sub);
+      setScannedHistories(data as unknown as QRCodeType[]);
+    } catch (error: any) {
+      setHistoriesError(error.message);
+    } finally {
+      setHistoriesLoading(false);
+    }
+  }, [userAttributes?.sub]);
+
+  useEffect(() => {
+    if (userAttributes?.sub) {
+      fetchHistories();
+    }
+  }, [userAttributes?.sub, fetchHistories]);
+  console.log("scanned history: ", scannedHistories);
+  
+  
 
   const [selectedData, setSelectedData] = useState<string | null>(null);
   const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
@@ -34,14 +64,22 @@ const HistoryScreen: React.FC = () => {
     return () => backHandler.remove();
   }, [selectedData]);
 
-  const filteredQrCodes = showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse();
+  //const filteredQrCodes = showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse();
+  const filteredQrCodes = showBookmarks ? scannedHistories.filter(qr => {
+    return qr.bookmarked
+  }) : scannedHistories;
 
-  const handleItemPress = (item: QRCode) => {
-    setSelectedData(item.data);
-    setSelectedScanResult(item.scanResult);
-    setSelectedType(item.type);
-    console.log('Selected QR code data:', item.data);
-    console.log('Selected QR code type:', item.type);
+  console.log("filtered", filteredQrCodes);
+  console.log("slice", qrCodes.slice().reverse());
+
+  const handleItemPress = (item: QRCodeType) => {
+    // setSelectedData(item.data);
+    // setSelectedScanResult(item.scanResult);
+    // setSelectedType(item.type);
+    //setSelectedData(item.contents);
+    setSelectedType(item.data.type);
+    console.log('Selected QR code data:', item);
+    // console.log('Selected QR code type:', item.type);
   };
 
   const confirmDelete = (index: number) => {
@@ -78,17 +116,18 @@ const HistoryScreen: React.FC = () => {
         data={filteredQrCodes}
         renderItem={({ item, index }) => {
           console.log('Rendering QR code item:', item);
-          const itemData = item.data;
           return (
             <View style={styles.itemContainer}>
               <View style={styles.itemLeft}>
                 <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.itemContent}>
                   <Image source={require('../assets/ScanIcon3.png')} style={styles.scanIcon} />
-                  <Text style={styles.dataText}>{itemData}</Text>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.dataText} numberOfLines={1} ellipsizeMode="tail">{item.data.contents}</Text>
+                  </View>
                 </TouchableOpacity>
-                <Text style={styles.dateText}>{new Date().toLocaleDateString('en-GB', {
-                  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                })}</Text>
+                <Text style={styles.dateText}>{new Date(item.data.createdAt).toLocaleDateString('en-GB', {
+                  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                </Text>
               </View>
               <View style={styles.itemRight}>
                 <TouchableOpacity onPress={() => dispatch(toggleBookmark(index))}>
@@ -101,7 +140,11 @@ const HistoryScreen: React.FC = () => {
             </View>
           );
         }}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item, index) => {
+          //console.log(item, index);
+          
+          return index.toString();
+        }}
         contentContainerStyle={styles.flatListContent}
       />
       {/* Modal for delete confirmation */}
@@ -161,7 +204,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   itemLeft: {
-    flexDirection: 'column',
+    flex: 1,
+    marginRight: 2,
   },
   itemContent: {
     flexDirection: 'row',
@@ -171,15 +215,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  textContainer: {
+    flex: 1,
+    marginLeft: 0,
+  },
   dataText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#000',
-    marginLeft: 10,
+    marginBottom: 7
   },
   dateText: {
     fontSize: 12,
-    color: '#000',
+    color: '#666',
     marginLeft: 10,
+    flex: 1
   },
   scanIcon: {
     width: 40,

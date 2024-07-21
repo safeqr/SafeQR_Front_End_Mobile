@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-
-interface UserAttributes {
-  email: string;
-  email_verified: string;
-  family_name: string;
-  given_name: string;
-  identities: string;
-  name: string;
-  sub: string;
-}
+import { UserAttributes } from '../types'
 
 const useFetchUserAttributes = () => {
   const [userAttributes, setUserAttributes] = useState<UserAttributes | null>(null);
@@ -22,6 +13,8 @@ const useFetchUserAttributes = () => {
         const attributes = await fetchUserAttributes();
         setUserAttributes(attributes as unknown as UserAttributes);
       } catch (error: any) {
+        console.log("Error in use fetch user attributes: ", error);
+        
         setError(error.message);
       } finally {
         setLoading(false);

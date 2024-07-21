@@ -1,30 +1,39 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { QRCode } from '../types';
+import { QRCode, UserAttributes } from '../types';
+
+const initialState: QRCodeState = {
+  qrCodes: [],
+  userAttributes: null,
+};
 
 const qrCodesSlice = createSlice({
   name: 'qrCodes',
-  initialState: [] as QRCode[],
+  initialState,
   reducers: {
     addQRCode(state, action: PayloadAction<QRCode>) {
-      state.push(action.payload);
+      state.qrCodes.push(action.payload);
       console.log('Added QR code to state:', action.payload);
     },
     toggleBookmark(state, action: PayloadAction<number>) {
-      const index = state.length - 1 - action.payload;
-      if (state[index]) {
-        state[index].bookmarked = !state[index].bookmarked;
+      const index = state.qrCodes.length - 1 - action.payload;
+      if (state.qrCodes[index]) {
+        state.qrCodes[index].bookmarked = !state.qrCodes[index].bookmarked;
         console.log('Toggled bookmark for QR code at index:', index);
       }
     },
     deleteQRCode(state, action: PayloadAction<number | null>) {
-      const index = state.length - 1 - (action.payload as number);
-      if (state[index]) {
+      const index = state.qrCodes.length - 1 - (action.payload as number);
+      if (state.qrCodes[index]) {
         console.log('Deleting QR code at index:', index);
-        state.splice(index, 1);
+        state.qrCodes.splice(index, 1);
       }
+    },
+    setUserAttributes(state, action: PayloadAction<UserAttributes>) {
+      state.userAttributes = action.payload;
+      console.log('(Store)Set user attributes:', action.payload);
     },
   },
 });
 
-export const { addQRCode, toggleBookmark, deleteQRCode } = qrCodesSlice.actions;
+export const { addQRCode, toggleBookmark, deleteQRCode, setUserAttributes } = qrCodesSlice.actions;
 export default qrCodesSlice.reducer;
