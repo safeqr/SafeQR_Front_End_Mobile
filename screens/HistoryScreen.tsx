@@ -1,21 +1,22 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, BackHandler, Modal } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
-import { RootState } from '../store';
-import { QRCode, QRCodeType } from '../types';
-import { toggleBookmark, deleteQRCode } from '../actions/qrCodeActions';
+import { RootState, AppDispatch } from '../store';
+import { QRCodeType } from '../types';
+import { toggleBookmark, deleteQRCode, setScannedHistories } from '../reducers/qrCodesReducer';
+
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
-import useFetchScannedHistories from '../hooks/useFetchScannedHistories';
 import { getScannedHistories } from '../api/qrCodeAPI';
 
 const HistoryScreen: React.FC = () => {
-  const dispatch = useDispatch();
-  const qrCodes = useSelector((state: RootState) => state.qrCodes.qrCodes);
+  const dispatch = useDispatch<AppDispatch>();
+  const histories = useSelector((state: RootState) => state.qrCodes.histories);
   const { userAttributes } = useFetchUserAttributes();
-  console.log("sub: ", userAttributes?.sub);
-  const [scannedHistories, setScannedHistories] = useState<QRCodeType []| null>(null);
+  const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
+  const [qrCodeToDelete, setQrCodeToDelete] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [historiesError, setHistoriesError] = useState<string | null>(null);
 
@@ -23,30 +24,35 @@ const HistoryScreen: React.FC = () => {
     if (!userAttributes?.sub) return;
 
     try {
-      const data = await getScannedHistories(userAttributes.sub);
-      setScannedHistories(data as unknown as QRCodeType[]);
+      setHistoriesLoading(true);
+      const historiesData = await getScannedHistories(userAttributes.sub);
+      dispatch(setScannedHistories(historiesData));
+
+      setHistoriesLoading(false);
     } catch (error: any) {
       setHistoriesError(error.message);
     } finally {
       setHistoriesLoading(false);
     }
-  }, [userAttributes?.sub]);
+  }, [userAttributes?.sub, dispatch]);
 
   useEffect(() => {
     if (userAttributes?.sub) {
       fetchHistories();
     }
   }, [userAttributes?.sub, fetchHistories]);
-  console.log("scanned history: ", scannedHistories);
-  
-  
+
+  const handleDelete = useCallback((qrCodeId: string) => {
+    if (userAttributes?.sub) {
+      dispatch(deleteQRCode({ userId: userAttributes.sub, qrCodeId }));
+      setIsModalVisible(false);
+    }
+  }, [dispatch, userAttributes]);
+
 
   const [selectedData, setSelectedData] = useState<string | null>(null);
   const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     const backAction = () => {
@@ -64,13 +70,7 @@ const HistoryScreen: React.FC = () => {
     return () => backHandler.remove();
   }, [selectedData]);
 
-  //const filteredQrCodes = showBookmarks ? qrCodes.filter(qr => qr.bookmarked) : qrCodes.slice().reverse();
-  const filteredQrCodes = showBookmarks ? scannedHistories.filter(qr => {
-    return qr.bookmarked
-  }) : scannedHistories;
-
-  console.log("filtered", filteredQrCodes);
-  console.log("slice", qrCodes.slice().reverse());
+  const filteredQrCodes = showBookmarks ? histories.filter(qr => qr.bookmarked) : histories;
 
   const handleItemPress = (item: QRCodeType) => {
     // setSelectedData(item.data);
@@ -80,12 +80,6 @@ const HistoryScreen: React.FC = () => {
     setSelectedType(item.data.type);
     console.log('Selected QR code data:', item);
     // console.log('Selected QR code type:', item.type);
-  };
-
-  const confirmDelete = (index: number) => {
-    setIndexToDelete(index);
-    setIsModalVisible(true);
-    console.log('Confirm delete for QR code at index:', index);
   };
 
   const clearSelectedData = () => {
@@ -114,8 +108,8 @@ const HistoryScreen: React.FC = () => {
       {/* List of QR codes */}
       <FlatList
         data={filteredQrCodes}
-        renderItem={({ item, index }) => {
-          console.log('Rendering QR code item:', item);
+        renderItem={({ item }) => {
+        //  console.log('Rendering QR code item:', item);
           return (
             <View style={styles.itemContainer}>
               <View style={styles.itemLeft}>
@@ -130,10 +124,13 @@ const HistoryScreen: React.FC = () => {
                 </Text>
               </View>
               <View style={styles.itemRight}>
-                <TouchableOpacity onPress={() => dispatch(toggleBookmark(index))}>
+                <TouchableOpacity onPress={() => dispatch(toggleBookmark({ userId: userAttributes.sub, qrCode: item}))}>
                   <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => confirmDelete(index)}>
+                <TouchableOpacity onPress={() => {
+                  setQrCodeToDelete(item.data.id);
+                  setIsModalVisible(true);
+                  }}>
                   <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
                 </TouchableOpacity>
               </View>
@@ -159,7 +156,7 @@ const HistoryScreen: React.FC = () => {
             <Text style={styles.modalTitle}>Are you sure?</Text>
             <Text style={styles.modalText}>If bookmarked, this will be removed from both History and Bookmarks.</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={() => dispatch(deleteQRCode(indexToDelete))}>
+              <TouchableOpacity style={styles.modalButton} onPress={() => handleDelete(qrCodeToDelete!)}>
                 <Text style={styles.modalButtonText}>Yes, Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>

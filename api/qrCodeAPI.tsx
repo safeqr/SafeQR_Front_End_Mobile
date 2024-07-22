@@ -8,6 +8,10 @@ const API_URL_VERIFY_URL = "/v1/qrcodetypes/verifyURL"
 const API_URL_VIRUS_TOTAL_CHECK = "/v1/qrcodetypes/virusTotalCheck"
 const API_URL_CHECK_REDIRECTS = "/v1/qrcodetypes/checkRedirects"
 const API_URL_GET_HISTORIES = "/v1/user/getScannedHistories"
+const API_URL_DELETE_SCANNED_HISTORY = "/v1/user/deleteScannedHistories"
+const API_URL_GET_BOOKMARKS = "/v1/user/getBookmarks"
+const API_URL_SET_BOOKMARK = "/v1/user/setBookmark"
+const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark"
 
 // Define a generic function to handle all types of requests
 export const apiRequest = async (config) => {
@@ -64,11 +68,49 @@ export const checkRedirects = async (data) => {
     data: { data }
   });
 };
-
-export const getScannedHistories = async (userId: String) => {
+// GET User's Scanned Histories
+export const getScannedHistories = async (userId: string) => {
   return apiRequest({
     method: 'get',
     url: `${API_BASE_URL}${API_URL_GET_HISTORIES}`,
     headers: { "X-USER-ID": userId },
+  });
+};
+// GET All User's Bookmark
+export const getAllUserBookmarks = async (userId: string) => {
+  return apiRequest({
+    method: 'get',
+    url: `${API_BASE_URL}${API_URL_GET_BOOKMARKS}`,
+    headers: { "X-USER-ID": userId },
+  });
+};
+
+// Create Bookmark on QR Code
+export const setBookmark = async (userId: string, qrCodeId: string) => {
+  return apiRequest({
+    method: 'post',
+    url: `${API_BASE_URL}${API_URL_SET_BOOKMARK}`,
+    headers: { "X-USER-ID": userId},
+    data: { "qrCodeId": qrCodeId }
+  });
+};
+
+// Delete single bookmark
+export const deleteBookmark = async (userId: string, qrCodeId: string) => {
+  return apiRequest({
+    method: 'put',
+    url: `${API_BASE_URL}${API_URL_DELETE_BOOKMARK}`,
+    headers: { "X-USER-ID": userId},
+    data: { "qrCodeId": qrCodeId }
+  });
+};
+
+// Delete Single Scanned History
+export const deleteScannedHistory = async (userId: string, qrCodeId: string) => {
+  return apiRequest({
+    method: 'put',
+    url: `${API_BASE_URL}${API_URL_DELETE_SCANNED_HISTORY}`,
+    headers: { "X-USER-ID": userId},
+    data: { "qrCodeId": qrCodeId }
   });
 };

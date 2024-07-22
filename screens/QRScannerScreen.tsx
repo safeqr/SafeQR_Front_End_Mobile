@@ -8,7 +8,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { useDispatch } from 'react-redux';
-import { addQRCode } from '../actions/qrCodeActions'; // Assuming you have actions defined for Redux
+import { addQRCode } from '../reducers/qrCodesReducer'; // Assuming you have actions defined for Redux
 import { detectQRCodeType, verifyURL, checkRedirects } from '../api/qrCodeAPI'; // Import utility functions
 
 // Main Function
