@@ -6,13 +6,11 @@ import { RootState } from '../store';
 interface QRCodeState {
     qrCodes: QRCode[];
     histories: QRCodeType[] | null;
-    bookmarks: QRCodeType[] | null;
     userAttributes: UserAttributes;
 }
 const initialState: QRCodeState = {
     qrCodes: [],
     histories: [],
-    bookmarks: [],
     userAttributes: null,
 };
 
@@ -68,9 +66,6 @@ const qrCodesSlice = createSlice({
         },
         setScannedHistories(state, action: PayloadAction<QRCodeType[]>) {
             state.histories = action.payload;
-        },
-        setBookmarks(state, action: PayloadAction<QRCodeType[]>) {
-            state.bookmarks = action.payload;
         },
     }
 });

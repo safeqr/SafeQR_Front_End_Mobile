@@ -8,13 +8,14 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
 import { addQRCode } from '../reducers/qrCodesReducer'; // Assuming you have actions defined for Redux
 import { detectQRCodeType, verifyURL, checkRedirects } from '../api/qrCodeAPI'; // Import utility functions
 
 // Main Function
 const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
   const navigation = useNavigation(); // call Navigation bar
-  const dispatch = useDispatch(); // Use dispatch for Redux actions
+  const dispatch = useDispatch<AppDispatch>(); // Use dispatch for Redux actions
 
   const [showSplash, setShowSplash] = useState<boolean>(true); // call splash screen
   const qrCodeContext = useContext(QRCodeContext); // From ./types.ts
@@ -147,15 +148,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     }
   };
 
-  // // Clear scan data when screen is focused
-  // useEffect(() => {
-  //   const unsubscribe = navigation.addListener('focus', () => {
-  //     clearScanDataInternal();
-  //     console.log("Screen focused, scan data cleared");
-  //   });
-  //   return unsubscribe;
-  // }, [navigation]);
-
   // Clear scan data when screen is focused
   useFocusEffect(
     useCallback(() => {
@@ -206,9 +198,9 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
+        {/* <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
           <Ionicons name="bug" size={24} color="#fff" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity onPress={readQRFromImage} style={styles.galleryButton}>
           <Ionicons name="image" size={24} color="#fff" />
         </TouchableOpacity>
@@ -252,6 +244,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f0fc',
+    height: '100%',
+    width: '100%',
   },
   cameraContainer: {
     height: '60%',

@@ -1,30 +1,109 @@
 {
   "auth": {
-    "safeqrfrontendmobile2d879dc9": {
+    "safeqr": {
       "customAuth": false,
       "dependsOn": [],
-      "frontendAuthConfig": {
-        "mfaConfiguration": "OFF",
-        "mfaTypes": [
-          "SMS"
-        ],
-        "passwordProtectionSettings": {
-          "passwordPolicyCharacters": [],
-          "passwordPolicyMinLength": 8
-        },
-        "signupAttributes": [
-          "EMAIL"
-        ],
-        "socialProviders": [],
-        "usernameAttributes": [
-          "EMAIL"
-        ],
-        "verificationMechanisms": [
-          "EMAIL"
-        ]
-      },
       "providerPlugin": "awscloudformation",
-      "service": "Cognito"
+      "service": "Cognito",
+      "serviceType": "imported"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_auth_safeqr_allowUnauthenticatedIdentities": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_authRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_authRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_googleClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_identityPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
+    },
+    "AMPLIFY_auth_safeqr_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "safeqr"
+        }
+      ]
     }
   }
 }

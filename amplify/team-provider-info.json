@@ -1,19 +1,32 @@
 {
   "dev": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-safeqrfrontendmobile-dev-d47dd-authRole",
-      "UnauthRoleArn": "arn:aws:iam::058264269465:role/amplify-safeqrfrontendmobile-dev-d47dd-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::058264269465:role/amplify-safeqrfrontendmobile-dev-d47dd-authRole",
+      "AuthRoleName": "amplify-safeqr-dev-45853-authRole",
+      "UnauthRoleArn": "arn:aws:iam::058264269465:role/amplify-safeqr-dev-45853-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::058264269465:role/amplify-safeqr-dev-45853-authRole",
       "Region": "ap-southeast-1",
-      "DeploymentBucketName": "amplify-safeqrfrontendmobile-dev-d47dd-deployment",
-      "UnauthRoleName": "amplify-safeqrfrontendmobile-dev-d47dd-unauthRole",
-      "StackName": "amplify-safeqrfrontendmobile-dev-d47dd",
-      "StackId": "arn:aws:cloudformation:ap-southeast-1:058264269465:stack/amplify-safeqrfrontendmobile-dev-d47dd/6b855b50-3c40-11ef-b0cb-0aac1b92eadd",
-      "AmplifyAppId": "d2d2iszqi4kpe5"
+      "DeploymentBucketName": "amplify-safeqr-dev-45853-deployment",
+      "UnauthRoleName": "amplify-safeqr-dev-45853-unauthRole",
+      "StackName": "amplify-safeqr-dev-45853",
+      "StackId": "arn:aws:cloudformation:ap-southeast-1:058264269465:stack/amplify-safeqr-dev-45853/df03aa80-48b3-11ef-8210-0285266ba73b",
+      "AmplifyAppId": "d3c5p62zte3j"
     },
     "categories": {
       "auth": {
-        "safeqrfrontendmobile2d879dc9": {}
+        "safeqr": {
+          "userPoolId": "ap-southeast-1_zkxA0NZYN",
+          "userPoolName": "safeqr",
+          "webClientId": "6jfhnjr067t2cgamvst1uquj73",
+          "nativeClientId": "6jfhnjr067t2cgamvst1uquj73",
+          "identityPoolId": "ap-southeast-1:10ca3025-9e28-4f14-a07e-93f4f69e4473",
+          "identityPoolName": "safeqr-identity-pool",
+          "allowUnauthenticatedIdentities": true,
+          "authRoleArn": "arn:aws:iam::058264269465:role/service-role/amplify-iam-role",
+          "authRoleName": "amplify-iam-role",
+          "unauthRoleArn": "arn:aws:iam::058264269465:role/service-role/amplify-iam-guest",
+          "unauthRoleName": "amplify-iam-guest",
+          "googleClientId": "937053967427-1gcm0u1pp1mabrueeka475kt2st7o932.apps.googleusercontent.com"
+        }
       }
     }
   }
