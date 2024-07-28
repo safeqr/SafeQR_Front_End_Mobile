@@ -1,23 +1,23 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 // Define custom props for CustomTabBar
 interface CustomTabBarProps extends BottomTabBarProps {
   clearScanData: () => void;
 }
 
-
 // Custom tab bar component with typings
-const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, navigation, clearScanData }) => {
+const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation, clearScanData }) => {
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
-          options.tabBarLabel !== undefined
+          route.name === 'Email'
+            ? 'Gmail'
+            : options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
             ? options.title
@@ -25,13 +25,13 @@ const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, naviga
 
         const isFocused = state.index === index;
 
-     // Event handler for tab press
-     const onPress = () => {
-      const event = navigation.emit({
-        type: 'tabPress',
-        target: route.key,
-        canPreventDefault: true
-      });
+        // Event handler for tab press
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
 
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
@@ -53,7 +53,9 @@ const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, naviga
           });
         };
 
-        const iconName = route.name === 'QRScanner' ? 'camera' : route.name === 'History' ? 'time' : 'settings';
+        // Define the icon for each tab
+        const iconName =
+          route.name === 'QRScanner' ? 'camera' : route.name === 'History' ? 'time' : 'settings';
 
         return (
           <TouchableOpacity
@@ -66,7 +68,11 @@ const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, naviga
             onLongPress={onLongPress}
             style={styles.tabButton}
           >
-           <Ionicons name={iconName} size={24} color={isFocused ? '#ff69b4' : '#222'} />
+            {route.name === 'Email' ? (
+              <MaterialIcons name="email" size={24} color={isFocused ? '#ff69b4' : '#222'} />
+            ) : (
+              <Ionicons name={iconName} size={24} color={isFocused ? '#ff69b4' : '#222'} />
+            )}
             {/* Check if label is a string before rendering */}
             {typeof label === 'string' ? (
               <Text style={{ color: isFocused ? '#ff69b4' : '#222' }}>
@@ -77,13 +83,15 @@ const CustomTabBar: React.FC<CustomTabBarProps> =  ({ state, descriptors, naviga
         );
       })}
       <View style={styles.floatingButton}>
-        <TouchableOpacity onPress={() => { 
-          clearScanData();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'QRScanner' }],
-          });
-        }}>
+        <TouchableOpacity
+          onPress={() => {
+            clearScanData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'QRScanner' }],
+            });
+          }}
+        >
           <Ionicons name="camera" size={28} color="#fff" />
         </TouchableOpacity>
       </View>

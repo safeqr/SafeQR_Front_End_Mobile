@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createDrawerNavigator } from '@react-navigation/drawer'; // Import Drawer Navigator
 import { Provider } from 'react-redux';
 import QRScannerScreen from './screens/QRScannerScreen';
 import HistoryScreen from './screens/HistoryScreen';
-import SettingsScreen from './screens/SettingsScreen';
+import EmailScreen from './screens/EmailScreen'; // Import the Email screen
+import SettingsScreen from './screens/SettingsScreen'; // Import the Settings screen
 import { QRCodeContext } from './types';
 import CustomTabBar from './components/CustomTabBar';
 import store from './store';
@@ -19,6 +21,7 @@ enableScreens();
 Amplify.configure(config);
 
 const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator(); // Create Drawer Navigator
 
 const App: React.FC = () => {
   const [scannedData, setScannedData] = useState<string>('');
@@ -39,7 +42,7 @@ const App: React.FC = () => {
             <Tab.Screen name="QRScanner">
               {(props) => <QRScannerScreen {...props} clearScanData={clearScanData} />}
             </Tab.Screen>
-            <Tab.Screen name="Settings" component={SettingsScreen} />
+            <Tab.Screen name="Email" component={EmailScreen} />
           </Tab.Navigator>
         </NavigationContainer>
       </QRCodeContext.Provider>

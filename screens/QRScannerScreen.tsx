@@ -53,6 +53,16 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     console.log("Scan data cleared");
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings" size={24} color="#000" style={{ marginRight: 10 }} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   // Handle QR Code Payload
   const handlePayload = async (payload: string) => {
     setScanned(true);
@@ -180,9 +190,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
 
   return (
     <View style={styles.container}>
-      <View style={styles.banner}>
-        <Text style={styles.headerText}>SafeQR v0.89</Text>
-      </View>
+      <Text style={styles.headerText}>SafeQR v0.89</Text>
       <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
 
       <View style={styles.cameraContainer}>
@@ -230,14 +238,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f0fc',
     padding: 20,
   },
-  banner: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ff69b4',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   splashContainer: {
     flex: 1,

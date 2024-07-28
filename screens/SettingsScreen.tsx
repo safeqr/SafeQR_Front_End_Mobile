@@ -1,200 +1,142 @@
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
-import { useAuthenticator } from '@aws-amplify/ui-react-native';
-import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
-import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
-import { useEffect, useState } from 'react';
-import { Buffer } from 'buffer';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-
-function SignOutButton() {
-  const { signOut } = useAuthenticator();
-  return <Button title="Sign Out" onPress={signOut} />;
+// Define custom props for CustomTabBar
+interface CustomTabBarProps extends BottomTabBarProps {
+  clearScanData: () => void;
 }
-const handleSignInWithRedirect = async () => {
-  try {
-    await signInWithRedirect();
-  } catch (error) {
-    console.error('Error during sign in:', error);
-  }
-};
 
-const SettingsScreen: React.FC = () => {
-  const { userAttributes } = useFetchUserAttributes();
-  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const getGoogleAccessToken = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        console.log('Current user:', currentUser);
-        
-        const { tokens } = await fetchAuthSession();
-        const test = await fetchAuthSession();
-        console.log('Tokens:', tokens);
-        console.log("aws access token: ", tokens.accessToken.toString());
-        console.log("test ", test);
-        
-        if (tokens?.idToken) {
-          const idToken = tokens.idToken.toString();
-          console.log('ID Token:', idToken);
-          
-          const parts = idToken.split('.');
-          if (parts.length !== 3) {
-            throw new Error('ID token is not a valid JWT');
-          
-          }
-          
-          const payload = parts[1];
-          const decodedPayload = Buffer.from(payload, 'base64').toString('utf8');
-          console.log('Decoded payload:', decodedPayload);
-          
-          let parsedPayload;
-          try {
-            parsedPayload = JSON.parse(decodedPayload);
-          } catch (parseError) {
-            console.error('Error parsing payload:', parseError);
-            console.error(`Parse error: ${parseError.message}\nPayload: ${decodedPayload}`);
-            return;
-          }
-          
-          console.log('Parsed payload:', parsedPayload);
-          // Options for toLocaleString
-          const options: Intl.DateTimeFormatOptions = {
-            timeZone: 'Asia/Singapore', // UTC+8 timezone
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-          };
-
-          
-          if (parsedPayload["custom:access_token"]) {
-            console.log('Google Access Token:', parsedPayload["custom:access_token"]);
-            console.log('Google Refresh Token: ', parsedPayload["custom:refresh_token"]);
-            
-            setGoogleAccessToken(parsedPayload["custom:access_token"]);
-            console.log("auth_time: ", new Date(parsedPayload.auth_time * 1000).toLocaleString('en-US', options));
-            console.log("iat: ", new Date(parsedPayload.iat * 1000).toLocaleString('en-US', options));
-            console.log("expiry: ", new Date(parsedPayload.exp * 1000).toLocaleString('en-US', options));
-            console.log("date created: ", new Date(1721715837500).toLocaleString('en-US', options));
-
-          } else {
-            console.error('No Google access token found in the payload');
-          }
-          
-        } else {
-          console.error('No ID token found in the session');
-        }
-      } catch (error) {
-        console.error('Error getting Google access token:', error);
-      }
-    };
-
-    if (userAttributes) {
-      getGoogleAccessToken();
-    }
-  }, [userAttributes]);
-  
-  const handleLinkPress = (url: string) => {
-    Linking.openURL(url);
-  };
-
+// Custom tab bar component with typings
+const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation, clearScanData }) => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Settings</Text>
-      <View style={styles.profileSection}>
-        <Text style={styles.sectionTitle}>Profile</Text>
-        {userAttributes ? (
-          <View>
-            <Text style={styles.userName}>Hello, {userAttributes?.name}</Text>
-            {googleAccessToken && (
-              <Text>Google Access Token: {googleAccessToken.substring(0, 10)}...</Text>
+    <View style={styles.tabBar}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label =
+          options.tabBarLabel !== undefined
+            ? options.tabBarLabel
+            : options.title !== undefined
+            ? options.title
+            : route.name;
+
+        const isFocused = state.index === index;
+
+        // Event handler for tab press
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+
+          if (route.name === 'QRScanner') {
+            clearScanData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'QRScanner' }],
+            });
+          }
+        };
+
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
+        // Define the icon for each tab
+        const iconName =
+          route.name === 'QRScanner' ? 'camera' : route.name === 'History' ? 'time' : 'settings';
+
+        return (
+          <TouchableOpacity
+            key={index}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={styles.tabButton}
+          >
+            {route.name === 'Settings' ? (
+              <MaterialIcons name="email" size={24} color={isFocused ? '#ff69b4' : '#222'} />
+            ) : (
+              <Ionicons name={iconName} size={24} color={isFocused ? '#ff69b4' : '#222'} />
             )}
-            <SignOutButton />
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.loginButton} onPress={handleSignInWithRedirect}>
-            <Text style={styles.loginButtonText}>Log In</Text>
+            {/* Check if label is a string before rendering */}
+            {typeof label === 'string' && route.name !== 'Settings' ? (
+              <Text style={{ color: isFocused ? '#ff69b4' : '#222' }}>
+                {label}
+              </Text>
+            ) : null}
           </TouchableOpacity>
-        )}
+        );
+      })}
+      <View style={styles.floatingButton}>
+        <TouchableOpacity
+          onPress={() => {
+            clearScanData();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'QRScanner' }],
+            });
+          }}
+        >
+          <Ionicons name="camera" size={28} color="#fff" />
+        </TouchableOpacity>
       </View>
-      <View style={styles.divider} />
-      <View style={styles.aboutUsSection}>
-        <Text style={styles.sectionTitle}>About Us</Text>
-        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/')}>
-          <Text style={styles.linkText}>safeqr.github.io/marketing</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/privacy-policy')}>
-          <Text style={styles.linkText}>Privacy Policy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/terms-of-service')}>
-          <Text style={styles.linkText}>Terms Of Service</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.versionText}>Version 1.2</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  userName: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f0fc',
-    padding: 20,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ff69b4',
-    marginBottom: 20,
-  },
-  profileSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 10,
-  },
-  loginButton: {
-    backgroundColor: '#ff69b4',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+  tabBar: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  tabButton: {
+    flex: 1,
     justifyContent: 'center',
-    alignSelf: 'flex-start',
+    alignItems: 'center',
   },
-  loginButtonText: {
-    color: '#000',
-    fontSize: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#ccc',
-    marginVertical: 20,
-  },
-  aboutUsSection: {
-    marginBottom: 20,
-  },
-  linkText: {
-    fontSize: 16,
-    color: '#0000ff',
-    marginBottom: 10,
-  },
-  versionText: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#aaa',
-    marginTop: 20,
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: '50%',
+    marginLeft: -30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#ff69b4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 3,
   },
 });
 
-export default SettingsScreen;
+export default CustomTabBar;
