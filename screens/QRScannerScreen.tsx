@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { QRCodeContext } from '../types';
 import axios from 'axios'; // For URL calls
@@ -11,8 +11,8 @@ import { useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { addQRCode } from '../reducers/qrCodesReducer'; // Assuming you have actions defined for Redux
 import { detectQRCodeType, verifyURL, checkRedirects } from '../api/qrCodeAPI'; // Import utility functions
+import SettingsScreen from './SettingsScreen'; // Import the Settings screen
 
-// Main Function
 const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
   const navigation = useNavigation(); // call Navigation bar
   const dispatch = useDispatch<AppDispatch>(); // Use dispatch for Redux actions
@@ -27,6 +27,9 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   const [dataType, setDataType] = useState<string>(''); // State for data type
   const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
   const [cameraVisible, setCameraVisible] = useState<boolean>(true); // State to control camera visibility
+
+  // State to control the visibility of the modal
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
 
   // Add state variables for scan results
   const [secureConnection, setSecureConnection] = useState<boolean | null>(null);
@@ -53,17 +56,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     console.log("Scan data cleared");
   };
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings" size={24} color="#000" style={{ marginRight: 10 }} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
-  // Handle QR Code Payload
   const handlePayload = async (payload: string) => {
     setScanned(true);
     console.log("Scanning Completed. Payload is:", payload);
@@ -95,7 +87,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     console.log("QR code data added to history");
   };
 
-  // Send QR Code Data to Backend Server
   const sendToAPIServer = async (payload: string): Promise<string> => {
     console.log('Sending QR code data to backend:', payload);
 
@@ -115,19 +106,16 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     }
   };
 
-  // Toggle Torch (Flashlight)
   const toggleTorch = () => {
     setEnableTorch((prev) => !prev);
     console.log("Torch toggled:", enableTorch ? "off" : "on");
   };
 
-  // Handle Test Scan
   const handleTestScan = () => {
     handlePayload('TEST123');
     console.log("Test scan executed");
   };
 
-  // Read QR Code from Image
   const readQRFromImage = async () => {
     clearScanDataInternal();
     console.log("Reading QR code from image");
@@ -143,11 +131,9 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
         const scannedResult = await scanFromURLAsync(result.assets[0].uri);
         if (scannedResult && scannedResult[0] && scannedResult[0].data) {
           handlePayload(scannedResult[0].data);
-          // Not sure why scannedResult.data is undefined but access as array work, KIV
           console.log('QR code data from image:', scannedResult[0].data);
         } else {
           setScannedData("No QR Code Found");
-          //setTimeout(() => setScannedData(""), 4000);
           console.log("No QR code found in the selected image");
           Alert.alert('No QR code found in the selected image.');
         }
@@ -158,7 +144,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     }
   };
 
-  // Clear scan data when screen is focused
   useFocusEffect(
     useCallback(() => {
       setCameraVisible(true);
@@ -206,9 +191,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
           <Ionicons name="flashlight" size={24} color="#fff" />
         </TouchableOpacity>
-        {/* <TouchableOpacity onPress={handleTestScan} style={styles.testButton}>
-          <Ionicons name="bug" size={24} color="#fff" />
-        </TouchableOpacity> */}
         <TouchableOpacity onPress={readQRFromImage} style={styles.galleryButton}>
           <Ionicons name="image" size={24} color="#fff" />
         </TouchableOpacity>
@@ -228,6 +210,28 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
           />
         </View>
       )}
+
+      {/* Settings Icon */}
+      <TouchableOpacity onPress={() => setIsSettingsModalVisible(true)} style={styles.settingsButton}>
+        <Ionicons name="settings" size={24} color="#000" />
+      </TouchableOpacity>
+
+      {/* Settings Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isSettingsModalVisible}
+        onRequestClose={() => setIsSettingsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <SettingsScreen />
+            <TouchableOpacity onPress={() => setIsSettingsModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -275,14 +279,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: 25,
   },
-  testButton: {
-    position: 'absolute',
-    bottom: 1,
-    alignSelf: 'stretch',
-    backgroundColor: '#000',
-    padding: 10,
-    borderRadius: 5,
-  },
   galleryButton: {
     position: 'absolute',
     bottom: 20,
@@ -307,6 +303,36 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: 'black',
   },
+  settingsButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 2,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    height: '90%',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '100%', // Adjust the width to cover more space
+    height: '90%', // Adjust the height to cover more space
+    backgroundColor: 'white',
+    padding: 20, // Reduce the padding
+    borderRadius: 10,
+    alignItems: 'center',
+  },  
+  closeButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#ff69b4',
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
-
 export default QRScannerScreen;

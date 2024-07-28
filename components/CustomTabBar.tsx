@@ -15,9 +15,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
-          route.name === 'Email'
-            ? 'Gmail'
-            : options.tabBarLabel !== undefined
+          options.tabBarLabel !== undefined
             ? options.tabBarLabel
             : options.title !== undefined
             ? options.title

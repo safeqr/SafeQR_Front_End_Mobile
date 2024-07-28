@@ -5,11 +5,9 @@ import { Provider } from 'react-redux';
 import QRScannerScreen from './screens/QRScannerScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import EmailScreen from './screens/EmailScreen'; // Import the Email screen
-import SettingsScreen from './screens/SettingsScreen'; // Import the Settings screen
 import { QRCodeContext } from './types';
 import CustomTabBar from './components/CustomTabBar';
 import store from './store';
-
 import { withAuthenticator } from '@aws-amplify/ui-react-native';
 import { Amplify } from 'aws-amplify';
 import config from './src/aws-exports';
@@ -20,7 +18,6 @@ enableScreens();
 Amplify.configure(config);
 
 const Tab = createBottomTabNavigator();
-
 
 const App: React.FC = () => {
   const [scannedData, setScannedData] = useState<string>('');
