@@ -4,6 +4,7 @@ import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
 import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
 import { useEffect, useState } from 'react';
 import { Buffer } from 'buffer';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
 
 function SignOutButton() {
