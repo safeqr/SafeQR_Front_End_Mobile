@@ -18,7 +18,7 @@ export const toggleBookmark = createAsyncThunk(
   'qrCodes/toggleBookmark',
   async ({ userId, qrCode }: { userId: string, qrCode: QRCodeType }, { dispatch, rejectWithValue }) => {
     try {
-      await (qrCode.bookmarked ? deleteBookmark(userId, qrCode.data.id) : setBookmark(userId, qrCode.data.id));
+      await (qrCode.bookmarked ? deleteBookmark(qrCode.data.id) : setBookmark(qrCode.data.id));
       // Dispatch the action to update local state
       dispatch(toggleBookmarkInState(qrCode));
       return qrCode;
@@ -33,7 +33,7 @@ export const deleteQRCode = createAsyncThunk(
   'qrCodes/deleteQRCode',
   async ({ userId, qrCodeId }: { userId: string, qrCodeId: string }, { dispatch, rejectWithValue }) => {
     try {
-      await deleteScannedHistory(userId, qrCodeId);
+      await deleteScannedHistory(qrCodeId);
       dispatch(deleteQRCodeInState(qrCodeId));
       return qrCodeId;
     } catch (error) {

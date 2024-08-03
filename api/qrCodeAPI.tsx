@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-const { API_BASE_URL } = Constants.expoConfig.extra;
+const { API_BASE_URL, ENVIRONMENT } = Constants.expoConfig.extra;
+import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 //const API_BASE_URL = 'https://localhost:8443';
 
 const API_URL_DETECT = "/v1/qrcodetypes/detect";
@@ -12,15 +13,46 @@ const API_URL_DELETE_SCANNED_HISTORY = "/v1/user/deleteScannedHistories"
 const API_URL_GET_BOOKMARKS = "/v1/user/getBookmarks"
 const API_URL_SET_BOOKMARK = "/v1/user/setBookmark"
 const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark"
+const API_URL_GET_SCANNED_GMAILS = "/v1/gmail/getEmails"
+
+// Create an Axios instance
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Request interceptor to set headers based on env
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await fetchIdToken();
+    const userId = await fetchUserId();
+
+    if (ENVIRONMENT === 'production') {
+      if (!config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      if (!config.headers['X-USER-ID']) {
+        config.headers['X-USER-ID'] = userId;
+      }
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Define a generic function to handle all types of requests
 export const apiRequest = async (config) => {
   try {
+    console.log("ENVIRONMENT:", ENVIRONMENT);
+    
     console.log(`API Call - ${config.method.toUpperCase()}:`, config.url, config.data || '');
     console.log(config);
-    
-    const response = await axios(config);
+    const response = await apiClient(config);
     console.log('API Response:', response.data);
+    
     return response.data;
   } catch (error) {
     if (error.response) {
@@ -35,6 +67,18 @@ export const apiRequest = async (config) => {
     }
     throw error;
   }
+};
+
+// Function to get the token
+const fetchIdToken = async () => {
+  const { tokens } = await fetchAuthSession();
+  return tokens.idToken.toString();
+};
+
+// Function to get the user ID
+const fetchUserId = async () => {
+  const currentUser = await getCurrentUser(); 
+  return currentUser.userId;
 };
 
 export const detectQRCodeType = async (data) => {
@@ -69,48 +113,51 @@ export const checkRedirects = async (data) => {
   });
 };
 // GET User's Scanned Histories
-export const getScannedHistories = async (userId: string) => {
+export const getScannedHistories = async () => {
   return apiRequest({
     method: 'get',
-    url: `${API_BASE_URL}${API_URL_GET_HISTORIES}`,
-    headers: { "X-USER-ID": userId },
+    url: `${API_BASE_URL}${API_URL_GET_HISTORIES}`
   });
 };
 // GET All User's Bookmark
-export const getAllUserBookmarks = async (userId: string) => {
+export const getAllUserBookmarks = async () => {
   return apiRequest({
     method: 'get',
     url: `${API_BASE_URL}${API_URL_GET_BOOKMARKS}`,
-    headers: { "X-USER-ID": userId },
   });
 };
 
 // Create Bookmark on QR Code
-export const setBookmark = async (userId: string, qrCodeId: string) => {
+export const setBookmark = async (qrCodeId: string) => {
   return apiRequest({
     method: 'post',
     url: `${API_BASE_URL}${API_URL_SET_BOOKMARK}`,
-    headers: { "X-USER-ID": userId},
     data: { "qrCodeId": qrCodeId }
   });
 };
 
 // Delete single bookmark
-export const deleteBookmark = async (userId: string, qrCodeId: string) => {
+export const deleteBookmark = async (qrCodeId: string) => {
   return apiRequest({
     method: 'put',
     url: `${API_BASE_URL}${API_URL_DELETE_BOOKMARK}`,
-    headers: { "X-USER-ID": userId},
     data: { "qrCodeId": qrCodeId }
   });
 };
 
 // Delete Single Scanned History
-export const deleteScannedHistory = async (userId: string, qrCodeId: string) => {
+export const deleteScannedHistory = async (qrCodeId: string) => {
   return apiRequest({
     method: 'put',
     url: `${API_BASE_URL}${API_URL_DELETE_SCANNED_HISTORY}`,
-    headers: { "X-USER-ID": userId},
     data: { "qrCodeId": qrCodeId }
+  });
+};
+
+// GET Scan user's GMAILS
+export const getScannedGmails = async () => {
+  return apiRequest({
+    method: 'get',
+    url: `${API_BASE_URL}${API_URL_GET_SCANNED_GMAILS}`
   });
 };

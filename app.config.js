@@ -9,6 +9,7 @@ export default ({ config }) => {
     ...config,
     extra: {
       API_BASE_URL: process.env.BASE_URL,
+      ENVIRONMENT: process.env.NODE_ENV
     },
   };
 };

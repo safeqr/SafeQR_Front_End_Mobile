@@ -25,7 +25,7 @@ const HistoryScreen: React.FC = () => {
 
     try {
       setHistoriesLoading(true);
-      const historiesData = await getScannedHistories(userAttributes.sub);
+      const historiesData = await getScannedHistories();
       dispatch(setScannedHistories(historiesData));
 
       setHistoriesLoading(false);
