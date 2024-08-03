@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-//const { API_BASE_URL } = Constants.expoConfig.extra;
-const API_BASE_URL = 'https://localhost:8443';
+const { API_BASE_URL } = Constants.expoConfig.extra;
+//const API_BASE_URL = 'https://localhost:8443';
 
 const API_URL_DETECT = "/v1/qrcodetypes/detect";
 const API_URL_VERIFY_URL = "/v1/qrcodetypes/verifyURL"

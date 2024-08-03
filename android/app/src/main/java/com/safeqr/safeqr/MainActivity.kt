@@ -1,6 +1,3 @@
-import android.os.Bundle;
-
-
 package com.safeqr.safeqr
 
 import android.os.Build

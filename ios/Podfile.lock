@@ -13,7 +13,7 @@ PODS:
   - EXJSONUtils (0.13.1)
   - EXManifests (0.14.3):
     - ExpoModulesCore
-  - Expo (51.0.18):
+  - Expo (51.0.24):
     - ExpoModulesCore
   - expo-dev-client (4.0.19):
     - EXManifests
@@ -224,13 +224,13 @@ PODS:
     - Yoga
   - ExpoAsset (10.0.10):
     - ExpoModulesCore
-  - ExpoCamera (15.0.13):
+  - ExpoCamera (15.0.14):
     - ExpoModulesCore
     - ZXingObjC/OneD
     - ZXingObjC/PDF417
   - ExpoFileSystem (17.0.1):
     - ExpoModulesCore
-  - ExpoFont (12.0.7):
+  - ExpoFont (12.0.9):
     - ExpoModulesCore
   - ExpoImageManipulator (12.0.5):
     - EXImageLoader
@@ -240,7 +240,7 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (13.0.2):
     - ExpoModulesCore
-  - ExpoModulesCore (1.12.18):
+  - ExpoModulesCore (1.12.20):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1217,9 +1217,9 @@ PODS:
     - React-Core
   - react-native-netinfo (11.3.1):
     - React-Core
-  - react-native-safe-area-context (4.10.8):
+  - react-native-safe-area-context (4.10.5):
     - React-Core
-  - react-native-webview (13.10.4):
+  - react-native-webview (13.8.6):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1825,19 +1825,19 @@ SPEC CHECKSUMS:
   EXImageLoader: ab589d67d6c5f2c33572afea9917304418566334
   EXJSONUtils: 30c17fd9cc364d722c0946a550dfbf1be92ef6a4
   EXManifests: c1fab4c3237675e7b0299ea8df0bcb14baca4f42
-  Expo: 56b642d0930789fc847dc7f424d2d599dfe59a5e
+  Expo: 798848eae1daf13363d69790986146b08d0cf92f
   expo-dev-client: bcca43a56437123873b32a36ea31568e4212c1ca
   expo-dev-launcher: ab76344f7a72c7b6bb255280a66202655ecf1965
   expo-dev-menu: 9b9886b383163f14821e624f3eb51a2084491aa2
   expo-dev-menu-interface: be32c09f1e03833050f0ee290dcc86b3ad0e73e4
   ExpoAsset: 323700f291684f110fb55f0d4022a3362ea9f875
-  ExpoCamera: c5be8a28a769c4dee3a02e017e5b55415d9beb2c
+  ExpoCamera: a5d000b22cd7dfd2c5904ed960e549de42c96da0
   ExpoFileSystem: 80bfe850b1f9922c16905822ecbf97acd711dc51
-  ExpoFont: 43b69559cef3d773db57c7ae7edd3cb0aa0dc610
+  ExpoFont: e7f2275c10ca8573c991e007329ad6bf98086485
   ExpoImageManipulator: aea99205c66043a00a0af90e345395637b9902fa
   ExpoImagePicker: 12a420923383ae38dccb069847218f27a3b87816
   ExpoKeepAwake: 3b8815d9dd1d419ee474df004021c69fdd316d08
-  ExpoModulesCore: 30e1ed4659356cb9a84e0e5ddf1d090d735973c1
+  ExpoModulesCore: 5440e96a8ee014f4fd88e77264985fd0a65f5f8c
   ExpoSharing: 8db05dd85081219f75989a3db2c92fe5e9741033
   EXUpdatesInterface: 996527fd7d1a5d271eb523258d603f8f92038f24
   FBLazyVector: 7e977dd099937dc5458851233141583abba49ff2
@@ -1871,8 +1871,8 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 9f68550e7c6839d01411ac8896aea5c868eff63a
   react-native-get-random-values: 21325b2244dfa6b58878f51f9aa42821e7ba3d06
   react-native-netinfo: bdb108d340cdb41875c9ced535977cac6d2ff321
-  react-native-safe-area-context: b7daa1a8df36095a032dff095a1ea8963cb48371
-  react-native-webview: 596fb33d67a3cde5a74bf1f6b4c28d3543477fdd
+  react-native-safe-area-context: a240ad4b683349e48b1d51fed1611138d1bdad97
+  react-native-webview: 05bae3a03a1e4f59568dfc05286c0ebf8954106c
   React-nativeconfig: fa5de9d8f4dbd5917358f8ad3ad1e08762f01dcb
   React-NativeModulesApple: 585d1b78e0597de364d259cb56007052d0bda5e5
   React-perflogger: 7bb9ba49435ff66b666e7966ee10082508a203e8
