@@ -7,11 +7,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider } from 'react-redux';
 import QRScannerScreen from './screens/QRScannerScreen';
 import HistoryScreen from './screens/HistoryScreen';
-import SettingsScreen from './screens/SettingsScreen';
+import EmailScreen from './screens/EmailScreen'; // Import the Email screen
 import { QRCodeContext } from './types';
 import CustomTabBar from './components/CustomTabBar';
 import store from './store';
-
 import { withAuthenticator } from '@aws-amplify/ui-react-native';
 import { Amplify } from 'aws-amplify';
 import config from './src/aws-exports';
@@ -42,7 +41,7 @@ const App: React.FC = () => {
             <Tab.Screen name="QRScanner">
               {(props) => <QRScannerScreen {...props} clearScanData={clearScanData} />}
             </Tab.Screen>
-            <Tab.Screen name="Settings" component={SettingsScreen} />
+            <Tab.Screen name="Email" component={EmailScreen} />
           </Tab.Navigator>
         </NavigationContainer>
       </QRCodeContext.Provider>

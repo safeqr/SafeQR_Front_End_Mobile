@@ -140,20 +140,18 @@ const SettingsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  userName: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',
-    padding: 20,
+    padding: 10, // Reduce padding
+    width: '100%', // Increase width to fill the modal
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ff69b4',
     marginBottom: 20,
+    textAlign: 'center', // Center the header text
   },
   profileSection: {
     marginBottom: 20,
@@ -197,5 +195,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+
 
 export default SettingsScreen;
