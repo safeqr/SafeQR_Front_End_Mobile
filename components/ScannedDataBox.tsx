@@ -1,40 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, Alert } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
-import * as Sharing from 'expo-sharing';
-import { WebView } from 'react-native-webview';
+//import * as Sharing from 'expo-sharing';
+//import * as Clipboard from 'expo-clipboard'; // >.<
+import { getQRCodeDetails } from '../api/qrCodeAPI';
+import SecureWebView from '../components/SecureWebView'; // Import the SecureWebView component
 
 // Define Props for ScannedDataBox component
 interface ScannedDataBoxProps {
-  data: string;
-  dataType: string;
+  qrCodeId: string;
   clearScanData: () => void;
-  scanResult: {
-    secureConnection: boolean;
-    virusTotalCheck: boolean;
-    redirects: number;
-  };
 }
 
-const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearScanData, scanResult }) => {
+const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [qrDetails, setQrDetails] = useState<any>(null);
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
-  console.log("ScannedDataBox -> Data", data);
-  console.log("DataType", dataType);
+  const [webViewUrl, setWebViewUrl] = useState('');
 
   useEffect(() => {
-    console.log("Scan result set:", scanResult);
-  }, [data]);
+    const fetchQRDetails = async () => {
+      try {
+        const details = await getQRCodeDetails(qrCodeId);
+        setQrDetails(details.qrcode);
+        console.log('details for scannedDataBOX:', details);
+      } catch (error) {
+        console.error('Error fetching QR details:', error);
+      }
+    };
+
+    if (qrCodeId) {
+      fetchQRDetails();
+    }
+  }, [qrCodeId]);
+
+  if (!qrDetails) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff69b4" />
+      </View>
+    );
+  }
+
+  // Clipboard Button KIV...cause it broke everything......
+/*   const copyToClipboard = async () => {
+    try {
+      const contents = qrDetails.data?.contents || 'Undefined';
+      await Clipboard.setStringAsync(contents);
+      Alert.alert('Copied to Clipboard', 'The QR code content has been copied to your clipboard.');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+   */
+
+  // Handle cases where data might be undefined
+  const data = qrDetails.data || {};
+  const details = qrDetails.details || {};
+  const type = data.info?.type || 'Undefined';
+  const contents = data.contents || 'Undefined';
+  const secureConnection = details.hstsHeader?.includes('HSTS Header') ? '✔️' : '✘';
+  const redirects = details.redirect || 0;
+  const securityHeaders = details.hstsHeader || ['No Headers'];
+  const redirectChain = details.redirectChain || ['No Redirects'];
 
   // Determine the result text based on scan result
   const getResultText = () => {
-    if (!scanResult.secureConnection && !scanResult.virusTotalCheck) {
+    if (secureConnection === '✘' || redirects > 0) {
       return 'DANGEROUS';
-    } else if (scanResult.redirects > 0) {
-      return 'WARNING';
-    } else {
+    } else if (secureConnection === '✔️' && redirects === 0) {
       return 'SAFE';
+    } else {
+      return 'WARNING';
     }
   };
 
@@ -52,15 +90,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
     }
   };
 
-  const shareQRCodeData = async () => {
-    try {
-      await Sharing.shareAsync(data);
-    } catch (error) {
-      console.error('Error sharing QR code data:', error);
-    }
-  };
-
-  const openWebView = () => {
+  // Open the WebView for the URL
+  const openWebView = (url: string) => {
+    setWebViewUrl(url);
     setIsWebViewVisible(true);
   };
 
@@ -70,45 +102,66 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
         <Ionicons name="close-circle-outline" size={18} color="#ff69b4" />
       </TouchableOpacity>
-      
+
       {/* Display scanned data */}
       <View style={styles.row}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
-        <Text style={styles.payload}>{data}</Text>
+        <Text style={styles.payload}>{contents}</Text>
       </View>
       <View style={styles.divider} />
-      <Text style={styles.timestampText}>{new Date().toLocaleString()}</Text>
+      <Text style={styles.timestampText}>{data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Invalid Date'}</Text>
       <View style={styles.qrContainer}>
-        <QRCode value={data || 'No Data'} size={75} backgroundColor="transparent" />
+        <QRCode value={contents || 'No Data'} size={75} backgroundColor="transparent" />
         <Text style={[styles.resultText, { color: getResultColor() }]}>
           Result: {getResultText()}
         </Text>
       </View>
       <View style={styles.divider} />
-      
+
       {/* Display data type */}
-      <Text style={styles.typeText}>Type: {dataType}</Text>
+      <Text style={styles.typeText}>Type: {type}</Text>
       <Text style={styles.blankLine}>{'\n'}</Text>
-      
+
       {/* Display scan checks */}
-      <Text style={styles.checksText}>Checks</Text>
-      <Text style={styles.checksText}>Secure Connection: {scanResult.secureConnection ? '✔️' : '✘'}</Text>
-      <Text style={styles.checksText}>Virus Total Check: {scanResult.virusTotalCheck ? '✔️' : '✘'}</Text>
-      <Text style={styles.checksText}>Redirects: {scanResult.redirects}</Text>
-      
+      {type === 'URL' && (
+        <>
+          <Text style={styles.checksText}>Checks</Text>
+          <Text style={styles.checksText}>Secure Connection: {secureConnection}</Text>
+          <Text style={styles.checksText}>Redirects: {redirects}</Text>
+          <TouchableOpacity style={styles.showAllButton} onPress={() => Alert.alert('Redirect Chain', redirectChain.join('\n'))}>
+            <Text style={styles.showAllButtonText}>Show all redirects</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {type === 'SMS' && (
+        <>
+          <Text style={styles.checksText}>Recipient Phone Number: {details.phone || 'Undefined'}</Text>
+          <Text style={styles.checksText}>Message Content: {details.message || 'Undefined'}</Text>
+        </>
+      )}
+
+      {type === 'TEXT' && (
+        <>
+          <Text style={styles.checksText}>Content: {contents}</Text>
+        </>
+      )}
+
       {/* Action buttons */}
       <View style={styles.iconContainer}>
-        <TouchableOpacity style={styles.iconButton} onPress={shareQRCodeData}>
-          <Ionicons name="share-social" size={18} color="#2196F3" />
-          <Text style={styles.iconText}>Share</Text>
+    <TouchableOpacity style={styles.iconButton} /*onPress={copyToClipboard}*/>
+      <Ionicons name="copy-outline" size={18} color="#2196F3" />
+      <Text style={styles.iconText}>Copy</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={openWebView}>
-          <Ionicons name="open" size={18} color="#2196F3" />
-          <Text style={styles.iconText}>Open</Text>
-        </TouchableOpacity>
+        {type === 'URL' && (
+          <TouchableOpacity style={styles.iconButton} onPress={() => openWebView(contents)}>
+            <Ionicons name="open" size={18} color="#2196F3" />
+            <Text style={styles.iconText}>Open</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.divider} />
-      
+
       {/* More information button */}
       <Text style={styles.moreInfoText}>More Information</Text>
       <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
@@ -116,7 +169,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
         <Text style={styles.moreInfoButtonText}>Security Headers</Text>
         <Ionicons name="chevron-forward" size={18} color="#ff69b4" />
       </TouchableOpacity>
-      
+
       {/* Modal for security headers */}
       <Modal
         visible={isModalVisible}
@@ -127,20 +180,17 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Security Headers</Text>
-            <Text style={styles.modalText}>Name: Strict-Transport-Security</Text>
-            <Text style={styles.modalText}>Value: max-age=31536000; includeSubDomains</Text>
-            <Text style={styles.modalText}>Name: X-Frame-Options</Text>
-            <Text style={styles.modalText}>Value: DENY</Text>
-            <Text style={styles.modalText}>Name: X-Content-Type-Options</Text>
-            <Text style={styles.modalText}>Value: nosniff</Text>
-            <Text style={styles.modalText}>Name: Content-Security-Policy</Text>
-            <Text style={styles.modalText}>Value: default-src 'self'</Text>
+            {securityHeaders.map((header, index) => (
+              <Text key={index} style={styles.modalText}>{header}</Text>
+            ))}
             <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
               <Text style={styles.closeModalButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      {/* SecureWebView Modal */}
       <Modal
         visible={isWebViewVisible}
         transparent={true}
@@ -149,14 +199,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ data, dataType, clearSc
       >
         <View style={styles.modalContainer}>
           <View style={styles.webViewContainer}>
-            <WebView
-              source={{ uri: data }}
-              javaScriptEnabled={false}
-              domStorageEnabled={false}
-              allowFileAccess={false}
-              originWhitelist={['*']}
-              onShouldStartLoadWithRequest={(request) => true}
-            />
+            <SecureWebView url={webViewUrl} />
             <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsWebViewVisible(false)}>
               <Text style={styles.closeModalButtonText}>Close</Text>
             </TouchableOpacity>
@@ -303,13 +346,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#fff',
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  showAllButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 7.5,
+    padding: 5,
+    marginTop: 5,
+  },
+  showAllButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    textAlign: 'center',
+  },
   webViewContainer: {
     width: '100%',
     height: '80%',
     backgroundColor: 'white',
     borderRadius: 7.5,
     overflow: 'hidden'
-  },
+  }
 });
 
 export default ScannedDataBox;

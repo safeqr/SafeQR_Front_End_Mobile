@@ -1,5 +1,5 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, BackHandler, Modal } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,9 @@ const HistoryScreen: React.FC = () => {
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [historiesError, setHistoriesError] = useState<string | null>(null);
 
+  const [selectedQrCodeId, setSelectedQrCodeId] = useState<string | null>(null);
+
+
   const fetchHistories = useCallback(async () => {
     if (!userAttributes?.sub) return;
 
@@ -27,8 +30,6 @@ const HistoryScreen: React.FC = () => {
       setHistoriesLoading(true);
       const historiesData = await getScannedHistories();
       dispatch(setScannedHistories(historiesData));
-
-      setHistoriesLoading(false);
     } catch (error: any) {
       setHistoriesError(error.message);
     } finally {
@@ -50,43 +51,17 @@ const HistoryScreen: React.FC = () => {
   }, [dispatch, userAttributes]);
 
 
-  const [selectedData, setSelectedData] = useState<string | null>(null);
-  const [selectedScanResult, setSelectedScanResult] = useState<any | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-
-  useEffect(() => {
-    const backAction = () => {
-      if (selectedData) {
-        setSelectedData(null);
-        setSelectedScanResult(null);
-        setSelectedType(null);
-        return true;
-      }
-      return false;
-    };
-
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
-    return () => backHandler.remove();
-  }, [selectedData]);
-
   const filteredQrCodes = showBookmarks ? histories.filter(qr => qr.bookmarked) : histories;
 
   const handleItemPress = (item: QRCodeType) => {
-    // setSelectedData(item.data);
-    // setSelectedScanResult(item.scanResult);
-    // setSelectedType(item.type);
-    //setSelectedData(item.contents);
-    setSelectedType(item.data.type);
-    console.log('Selected QR code data:', item);
-    // console.log('Selected QR code type:', item.type);
+    setSelectedQrCodeId(item.data.id || null);
   };
 
   const clearSelectedData = () => {
-    setSelectedData(null);
-    setSelectedScanResult(null);
-    setSelectedType(null);
+    setSelectedQrCodeId(null);
   };
+  
+  
 
   return (
     <View style={styles.container}>
@@ -99,51 +74,57 @@ const HistoryScreen: React.FC = () => {
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
-      {/* Display scanned data details */}
-      {selectedData && (
-        <View style={styles.scannedDataBoxContainer}>
-          <ScannedDataBox data={selectedData} scanResult={selectedScanResult} dataType={selectedType} clearScanData={clearSelectedData} />
-        </View>
+      
+      {/* Loading Indicator */}
+      {historiesLoading && <ActivityIndicator size="large" color="#ff69b4" />}
+
+      {/* Display message when there are no histories or bookmarks */}
+      {!historiesLoading && filteredQrCodes.length === 0 && (
+        <Text style={styles.emptyMessage}>
+          {showBookmarks ? 'No bookmarks available' : 'No history available'}
+        </Text>
       )}
+
+      {/* Display scanned data details */}
+      {selectedQrCodeId && (
+  <View style={styles.scannedDataBoxContainer}>
+    <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedData} />
+  </View>
+)}
+
       {/* List of QR codes */}
       <FlatList
         data={filteredQrCodes}
-        renderItem={({ item }) => {
-        //  console.log('Rendering QR code item:', item);
-          return (
-            <View style={styles.itemContainer}>
-              <View style={styles.itemLeft}>
-                <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.itemContent}>
-                  <Image source={require('../assets/ScanIcon3.png')} style={styles.scanIcon} />
-                  <View style={styles.textContainer}>
-                    <Text style={styles.dataText} numberOfLines={1} ellipsizeMode="tail">{item.data.contents}</Text>
-                  </View>
-                </TouchableOpacity>
-                <Text style={styles.dateText}>{new Date(item.data.createdAt).toLocaleDateString('en-GB', {
-                  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
-                </Text>
-              </View>
-              <View style={styles.itemRight}>
-                <TouchableOpacity onPress={() => dispatch(toggleBookmark({ userId: userAttributes.sub, qrCode: item}))}>
-                  <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  setQrCodeToDelete(item.data.id);
-                  setIsModalVisible(true);
-                  }}>
-                  <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
-                </TouchableOpacity>
-              </View>
+        renderItem={({ item }) => (
+          <View style={styles.itemContainer}>
+            <View style={styles.itemLeft}>
+              <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.itemContent}>
+                <Image source={require('../assets/ScanIcon3.png')} style={styles.scanIcon} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.dataText} numberOfLines={1} ellipsizeMode="tail">{item.data.contents}</Text>
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.dateText}>{new Date(item.data.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
+              </Text>
             </View>
-          );
-        }}
-        keyExtractor={(item, index) => {
-          //console.log(item, index);
-          
-          return index.toString();
-        }}
+            <View style={styles.itemRight}>
+              <TouchableOpacity onPress={() => dispatch(toggleBookmark({ userId: userAttributes.sub, qrCode: item}))}>
+                <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => {
+                setQrCodeToDelete(item.data.id);
+                setIsModalVisible(true);
+                }}>
+                <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        keyExtractor={(item, index) => index.toString()}
         contentContainerStyle={styles.flatListContent}
       />
+
       {/* Modal for delete confirmation */}
       <Modal
         transparent={true}
@@ -234,6 +215,15 @@ const styles = StyleSheet.create({
   flatListContent: {
     paddingBottom: 100,
   },
+  emptyMessage: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#ff69b4',
+    marginVertical: 20,
+  },
+  scannedDataBoxContainer: {
+    marginBottom: 20,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -270,9 +260,6 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     color: '#000',
-  },
-  scannedDataBoxContainer: {
-    marginBottom: 20,
   },
 });
 

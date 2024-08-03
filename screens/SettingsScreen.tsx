@@ -1,16 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Button } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Button } from 'react-native';
 import { useAuthenticator } from '@aws-amplify/ui-react-native';
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
 import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
-import { useEffect, useState } from 'react';
+import { deleteAllScannedHistories } from '../api/qrCodeAPI'; // Import the API function
 import { Buffer } from 'buffer';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-
 
 function SignOutButton() {
   const { signOut } = useAuthenticator();
   return <Button title="Sign Out" onPress={signOut} />;
 }
+
 const handleSignInWithRedirect = async () => {
   try {
     await signInWithRedirect();
@@ -42,7 +42,6 @@ const SettingsScreen: React.FC = () => {
           const parts = idToken.split('.');
           if (parts.length !== 3) {
             throw new Error('ID token is not a valid JWT');
-          
           }
           
           const payload = parts[1];
@@ -70,7 +69,6 @@ const SettingsScreen: React.FC = () => {
             second: '2-digit'
           };
 
-          
           if (parsedPayload["custom:access_token"]) {
             console.log('Google Access Token:', parsedPayload["custom:access_token"]);
             console.log('Google Refresh Token: ', parsedPayload["custom:refresh_token"]);
@@ -84,7 +82,6 @@ const SettingsScreen: React.FC = () => {
           } else {
             console.error('No Google access token found in the payload');
           }
-          
         } else {
           console.error('No ID token found in the session');
         }
@@ -97,32 +94,57 @@ const SettingsScreen: React.FC = () => {
       getGoogleAccessToken();
     }
   }, [userAttributes]);
-  
+
   const handleLinkPress = (url: string) => {
     Linking.openURL(url);
+  };
+
+  const handleDeleteAllHistories = async () => {
+    try {
+      const response = await deleteAllScannedHistories();
+      Alert.alert('Success', response.message);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete histories. Please try again.');
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Settings</Text>
-      <View style={styles.profileSection}>
-        <Text style={styles.sectionTitle}>Profile</Text>
-        {userAttributes ? (
-          <View>
-            <Text style={styles.userName}>Hello, {userAttributes?.name}</Text>
-            {googleAccessToken && (
-              <Text>Google Access Token: {googleAccessToken.substring(0, 10)}...</Text>
-            )}
-            <SignOutButton />
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.loginButton} onPress={handleSignInWithRedirect}>
-            <Text style={styles.loginButtonText}>Log In</Text>
-          </TouchableOpacity>
-        )}
+
+      {/* Profile Section */}
+          <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Profile</Text>
+      {userAttributes ? (
+        <View>
+          <Text style={styles.userName}>Hello, {userAttributes.name || 'Unknown User'}</Text>
+          {googleAccessToken && (
+            <Text>Google Access Token: {googleAccessToken.substring(0, 10)}...</Text>
+          )}
+          <SignOutButton />
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.loginButton} onPress={handleSignInWithRedirect}>
+          <Text style={styles.loginButtonText}>Log In</Text>
+        </TouchableOpacity>
+      )}
       </View>
+
+
       <View style={styles.divider} />
-      <View style={styles.aboutUsSection}>
+
+      {/* History & Bookmarks Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>History & Bookmarks</Text>
+        <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllHistories}>
+          <Text style={styles.deleteAllButtonText}>Delete All History</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* About Us Section */}
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>About Us</Text>
         <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/')}>
           <Text style={styles.linkText}>safeqr.github.io/marketing</Text>
@@ -134,6 +156,7 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.linkText}>Terms Of Service</Text>
         </TouchableOpacity>
       </View>
+
       <Text style={styles.versionText}>Version 1.2</Text>
     </View>
   );
@@ -143,22 +166,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',
-    padding: 10, // Reduce padding
-    width: '100%', // Increase width to fill the modal
+    padding: 10,
+    width: '100%',
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#ff69b4',
     marginBottom: 20,
-    textAlign: 'center', // Center the header text
+    textAlign: 'center',
   },
-  profileSection: {
+  section: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 16,
     color: '#000',
     marginBottom: 10,
   },
@@ -175,13 +203,25 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
   },
+  deleteAllButton: {
+    backgroundColor: '#ff0000', // Red color
+    borderRadius: 25, // Round button
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    marginVertical: 10,
+  },
+  deleteAllButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   divider: {
     height: 1,
     backgroundColor: '#ccc',
     marginVertical: 20,
-  },
-  aboutUsSection: {
-    marginBottom: 20,
   },
   linkText: {
     fontSize: 16,
@@ -194,7 +234,7 @@ const styles = StyleSheet.create({
     color: '#aaa',
     marginTop: 20,
   },
+  
 });
-
 
 export default SettingsScreen;

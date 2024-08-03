@@ -2,18 +2,22 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 const { API_BASE_URL, ENVIRONMENT } = Constants.expoConfig.extra;
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
-//const API_BASE_URL = 'https://localhost:8443';
 
-const API_URL_DETECT = "/v1/qrcodetypes/detect";
-const API_URL_VERIFY_URL = "/v1/qrcodetypes/verifyURL"
-const API_URL_VIRUS_TOTAL_CHECK = "/v1/qrcodetypes/virusTotalCheck"
-const API_URL_CHECK_REDIRECTS = "/v1/qrcodetypes/checkRedirects"
-const API_URL_GET_HISTORIES = "/v1/user/getScannedHistories"
-const API_URL_DELETE_SCANNED_HISTORY = "/v1/user/deleteScannedHistories"
-const API_URL_GET_BOOKMARKS = "/v1/user/getBookmarks"
-const API_URL_SET_BOOKMARK = "/v1/user/setBookmark"
-const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark"
-const API_URL_GET_SCANNED_GMAILS = "/v1/gmail/getEmails"
+
+const API_URL_SCAN = "/v1/qrcodetypes/scan";
+const API_URL_GET_QR_DETAILS = "/v1/qrcodetypes/getQRDetails";
+
+
+const API_URL_GET_HISTORIES = "/v1/user/getScannedHistories";
+const API_URL_DELETE_SCANNED_HISTORY = "/v1/user/deleteScannedHistories";
+const API_URL_DELETE_ALL_HISTORIES = "/v1/user/deleteAllScannedHistories";
+const API_URL_GET_BOOKMARKS = "/v1/user/getBookmarks";
+const API_URL_SET_BOOKMARK = "/v1/user/setBookmark";
+const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark";
+
+
+const API_URL_GET_SCANNED_GMAILS = "/v1/gmail/getEmails";
+const API_URL_GET_USER = "/v1/user/getUser"; // New endpoint
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -36,6 +40,9 @@ apiClient.interceptors.request.use(
       }
     }
 
+    // Log the X-USER-ID header
+    console.log('X-USER-ID:', config.headers['X-USER-ID']);
+    
     return config;
   },
   (error) => {
@@ -47,22 +54,17 @@ apiClient.interceptors.request.use(
 export const apiRequest = async (config) => {
   try {
     console.log("ENVIRONMENT:", ENVIRONMENT);
-    
     console.log(`API Call - ${config.method.toUpperCase()}:`, config.url, config.data || '');
     console.log(config);
     const response = await apiClient(config);
     console.log('API Response:', response.data);
-    
     return response.data;
   } catch (error) {
     if (error.response) {
-      // The request was made and the server responded with a status code that falls out of the range of 2xx
       console.error('API Error - Response:', error.response.data);
     } else if (error.request) {
-      // The request was made but no response was received
       console.error('API Error - No Response:', error.request);
     } else {
-      // Something happened in setting up the request that triggered an Error
       console.error('API Error - General:', error.message);
     }
     throw error;
@@ -81,37 +83,29 @@ const fetchUserId = async () => {
   return currentUser.userId;
 };
 
-export const detectQRCodeType = async (data) => {
+// Function to handle /scan request
+export const scanQRCode = async (data) => {
   return apiRequest({
     method: 'post',
-    url: `${API_BASE_URL}${API_URL_DETECT}`,
+    url: `${API_BASE_URL}${API_URL_SCAN}`,
     data: { data }
   });
 };
 
-export const verifyURL = async (data) => {
+// Function to get QR code details
+export const getQRCodeDetails = async (qrCodeId: string) => {
   return apiRequest({
-    method: 'post',
-    url: `${API_BASE_URL}${API_URL_VERIFY_URL}`,
-    data: { data }
+    method: 'get',
+    url: `${API_BASE_URL}${API_URL_GET_QR_DETAILS}`,
+    headers: { 'QR-ID': qrCodeId },
   });
 };
 
-export const virusTotalCheck = async (data) => {
-  return apiRequest({
-    method: 'post',
-    url: `${API_BASE_URL}${API_URL_VIRUS_TOTAL_CHECK}`,
-    data: { data }
-  });
-};
 
-export const checkRedirects = async (data) => {
-  return apiRequest({
-    method: 'post',
-    url: `${API_BASE_URL}${API_URL_CHECK_REDIRECTS}`,
-    data: { data }
-  });
-};
+
+
+//-----------
+
 // GET User's Scanned Histories
 export const getScannedHistories = async () => {
   return apiRequest({
@@ -119,7 +113,8 @@ export const getScannedHistories = async () => {
     url: `${API_BASE_URL}${API_URL_GET_HISTORIES}`
   });
 };
-// GET All User's Bookmark
+
+// GET All User's Bookmarks
 export const getAllUserBookmarks = async () => {
   return apiRequest({
     method: 'get',
@@ -132,7 +127,7 @@ export const setBookmark = async (qrCodeId: string) => {
   return apiRequest({
     method: 'post',
     url: `${API_BASE_URL}${API_URL_SET_BOOKMARK}`,
-    data: { "qrCodeId": qrCodeId }
+    data: { qrCodeId }
   });
 };
 
@@ -141,7 +136,7 @@ export const deleteBookmark = async (qrCodeId: string) => {
   return apiRequest({
     method: 'put',
     url: `${API_BASE_URL}${API_URL_DELETE_BOOKMARK}`,
-    data: { "qrCodeId": qrCodeId }
+    data: { qrCodeId }
   });
 };
 
@@ -150,7 +145,15 @@ export const deleteScannedHistory = async (qrCodeId: string) => {
   return apiRequest({
     method: 'put',
     url: `${API_BASE_URL}${API_URL_DELETE_SCANNED_HISTORY}`,
-    data: { "qrCodeId": qrCodeId }
+    data: { qrCodeId }
+  });
+};
+
+// Function to delete all scanned histories
+export const deleteAllScannedHistories = async () => {
+  return apiRequest({
+    method: 'put',
+    url: `${API_BASE_URL}${API_URL_DELETE_ALL_HISTORIES}`,
   });
 };
 
@@ -159,5 +162,13 @@ export const getScannedGmails = async () => {
   return apiRequest({
     method: 'get',
     url: `${API_BASE_URL}${API_URL_GET_SCANNED_GMAILS}`
+  });
+};
+
+// Get user information
+export const getUserInfo = async () => {
+  return apiRequest({
+    method: 'get',
+    url: `${API_BASE_URL}${API_URL_GET_USER}`,
   });
 };
