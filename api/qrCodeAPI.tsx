@@ -16,9 +16,9 @@ const API_URL_SET_BOOKMARK = "/v1/user/setBookmark";
 const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark";
 
 
-const API_URL_GET_SCANNED_GMAILS = "/v1/gmail/getEmails";
-const API_URL_GET_USER = "/v1/user/getUser"; // New endpoint
-
+const API_URL_GET_EMAILS = "/v1/gmail/getEmails";
+const API_URL_GET_SCANNED_EMAILS = "/v1/gmail/getScannedEmails";
+const API_URL_GET_USER = "/v1/user/getUser"; 
 
 
 // Create an Axios instance
@@ -103,37 +103,6 @@ export const getQRCodeDetails = async (qrCodeId: string) => {
   });
 };
 
-// Function to get scanned Gmail emails
-export const getEmails = async (accessToken: string) => {
-  console.log("getEmails function called");
-
-  try {
-    console.log("Making API request to get scanned emails with accessToken:", accessToken);
-    const response = await apiRequest({
-      method: 'get',
-      url: `${API_BASE_URL}${API_URL_GET_SCANNED_GMAILS}`,
-      headers: {
-        'accessToken': accessToken,
-      },
-    });
-
-    console.log("API Response:", response);
-    return response;
-  } catch (error) {
-    console.error("Error during getEmails API call:", error);
-
-    if (error.response) {
-      console.error("Response error data:", error.response.data);
-    } else if (error.request) {
-      console.error("Request error, no response received:", error.request);
-    } else {
-      console.error("Error message:", error.message);
-    }
-
-    throw error;
-  }
-};
-
 //-----------
 
 // GET User's Scanned Histories
@@ -187,13 +156,66 @@ export const deleteAllScannedHistories = async () => {
   });
 };
 
-// GET Scan user's GMAILS
-export const getScannedGmails = async () => {
-  return apiRequest({
-    method: 'get',
-    url: `${API_BASE_URL}${API_URL_GET_SCANNED_GMAILS}`
-  });
+// GET already scanned emails from DB
+export const getScannedEmails = async () => {
+  console.log("getScannedEmails function called");
+
+  try {
+    console.log("Making API request to get already scanned emails from the database");
+    const response = await apiRequest({
+      method: 'get',
+      url: `${API_BASE_URL}${API_URL_GET_SCANNED_EMAILS}`
+    });
+
+    console.log("API Response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error during getScannedEmails API call:", error);
+
+    if (error.response) {
+      console.error("Response error data:", error.response.data);
+    } else if (error.request) {
+      console.error("Request error, no response received:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+
+    throw error;
+  }
 };
+
+// Function to get start the scanning of inbox in server
+export const getEmails = async (accessToken: string, refreshToken: string) => {
+  console.log("getEmails function called");
+
+  try {
+    console.log("Making API request to get Gmail emails with accessToken and refreshToken");
+    const response = await apiRequest({
+      method: 'get',
+      url: `${API_BASE_URL}${API_URL_GET_EMAILS}`,
+      headers: {
+        accessToken,
+        refreshToken,
+      },
+    });
+
+    console.log("API Response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error during getEmails API call:", error);
+
+    if (error.response) {
+      console.error("Response error data:", error.response.data);
+    } else if (error.request) {
+      console.error("Request error, no response received:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+
+    throw error;
+  }
+};
+
 
 // Get user information
 export const getUserInfo = async () => {
