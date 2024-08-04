@@ -19,6 +19,8 @@ const API_URL_DELETE_BOOKMARK = "/v1/user/deleteBookmark";
 const API_URL_GET_SCANNED_GMAILS = "/v1/gmail/getEmails";
 const API_URL_GET_USER = "/v1/user/getUser"; // New endpoint
 
+
+
 // Create an Axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -101,8 +103,36 @@ export const getQRCodeDetails = async (qrCodeId: string) => {
   });
 };
 
+// Function to get scanned Gmail emails
+export const getEmails = async (accessToken: string) => {
+  console.log("getEmails function called");
 
+  try {
+    console.log("Making API request to get scanned emails with accessToken:", accessToken);
+    const response = await apiRequest({
+      method: 'get',
+      url: `${API_BASE_URL}${API_URL_GET_SCANNED_GMAILS}`,
+      headers: {
+        'accessToken': accessToken,
+      },
+    });
 
+    console.log("API Response:", response);
+    return response;
+  } catch (error) {
+    console.error("Error during getEmails API call:", error);
+
+    if (error.response) {
+      console.error("Response error data:", error.response.data);
+    } else if (error.request) {
+      console.error("Request error, no response received:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+
+    throw error;
+  }
+};
 
 //-----------
 
