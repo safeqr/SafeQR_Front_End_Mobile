@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, Alert } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { Ionicons } from '@expo/vector-icons';
-//import * as Sharing from 'expo-sharing';
-//import * as Clipboard from 'expo-clipboard'; // >.<
+import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons'; // Import icons
 import { getQRCodeDetails } from '../api/qrCodeAPI';
 import SecureWebView from '../components/SecureWebView'; // Import the SecureWebView component
 
@@ -15,6 +13,7 @@ interface ScannedDataBoxProps {
 
 const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isRedirectModalVisible, setIsRedirectModalVisible] = useState(false);
   const [qrDetails, setQrDetails] = useState<any>(null);
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState('');
@@ -43,33 +42,21 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     );
   }
 
-  // Clipboard Button KIV...cause it broke everything......
-/*   const copyToClipboard = async () => {
-    try {
-      const contents = qrDetails.data?.contents || 'Undefined';
-      await Clipboard.setStringAsync(contents);
-      Alert.alert('Copied to Clipboard', 'The QR code content has been copied to your clipboard.');
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
-    }
-  };
-   */
-
   // Handle cases where data might be undefined
   const data = qrDetails.data || {};
   const details = qrDetails.details || {};
   const type = data.info?.type || 'Undefined';
   const contents = data.contents || 'Undefined';
-  const secureConnection = details.hstsHeader?.includes('HSTS Header') ? '✔️' : '✘';
+  const secureConnection = details.hstsHeader?.some((header: string) => header.includes('HSTS Header'));
   const redirects = details.redirect || 0;
   const securityHeaders = details.hstsHeader || ['No Headers'];
   const redirectChain = details.redirectChain || ['No Redirects'];
 
   // Determine the result text based on scan result
   const getResultText = () => {
-    if (secureConnection === '✘' || redirects > 0) {
+    if (!secureConnection || redirects > 0) {
       return 'DANGEROUS';
-    } else if (secureConnection === '✔️' && redirects === 0) {
+    } else if (secureConnection && redirects === 0) {
       return 'SAFE';
     } else {
       return 'WARNING';
@@ -87,6 +74,17 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       return '#44c167'; // Green
     } else {
       return '#000000'; // Black for unknown
+    }
+  };
+
+  // Determine the appropriate icon for redirects
+  const getRedirectIcon = () => {
+    if (redirects === 0) {
+      return <Ionicons name="shield-checkmark" size={18} color="#44c167" />;
+    } else if (redirects <= 2) {
+      return <Ionicons name="shield" size={18} color="#ffa500" />;
+    } else {
+      return <MaterialCommunityIcons name="shield-alert" size={18} color="#ff0000" />;
     }
   };
 
@@ -116,20 +114,34 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
           Result: {getResultText()}
         </Text>
       </View>
-      <View style={styles.divider} />
+    
 
-      {/* Display data type */}
+      {/* Display data type */}  
+      <View style={styles.divider} />
       <Text style={styles.typeText}>Type: {type}</Text>
+      <View style={styles.divider} />
       <Text style={styles.blankLine}>{'\n'}</Text>
 
       {/* Display scan checks */}
       {type === 'URL' && (
         <>
-          <Text style={styles.checksText}>Checks</Text>
-          <Text style={styles.checksText}>Secure Connection: {secureConnection}</Text>
-          <Text style={styles.checksText}>Redirects: {redirects}</Text>
-          <TouchableOpacity style={styles.showAllButton} onPress={() => Alert.alert('Redirect Chain', redirectChain.join('\n'))}>
-            <Text style={styles.showAllButtonText}>Show all redirects</Text>
+          <View style={styles.displayCheck}>
+            {secureConnection ? (
+              <>
+                <Ionicons name="shield-checkmark" size={18} color="#44c167" />
+                <Text style={styles.checksText}>Secure Connection</Text>
+              </>
+            ) : (
+              <>
+                <SimpleLineIcons name="shield" size={18} color="#ff0000" />
+                <Text style={styles.checksText}>Not Secure</Text>
+              </>
+            )}
+          </View>
+          <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+            {getRedirectIcon()}
+            <Text style={styles.moreInfoButtonText}>Redirects</Text>
+            <Ionicons name="chevron-forward" size={18} color="#ff69b4" />
           </TouchableOpacity>
         </>
       )}
@@ -147,23 +159,8 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </>
       )}
 
-      {/* Action buttons */}
-      <View style={styles.iconContainer}>
-    <TouchableOpacity style={styles.iconButton} /*onPress={copyToClipboard}*/>
-      <Ionicons name="copy-outline" size={18} color="#2196F3" />
-      <Text style={styles.iconText}>Copy</Text>
-        </TouchableOpacity>
-        {type === 'URL' && (
-          <TouchableOpacity style={styles.iconButton} onPress={() => openWebView(contents)}>
-            <Ionicons name="open" size={18} color="#2196F3" />
-            <Text style={styles.iconText}>Open</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.divider} />
+ 
 
-      {/* More information button */}
-      <Text style={styles.moreInfoText}>More Information</Text>
       <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
         <Ionicons name="shield-checkmark" size={18} color="#ff69b4" />
         <Text style={styles.moreInfoButtonText}>Security Headers</Text>
@@ -189,6 +186,37 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
           </View>
         </View>
       </Modal>
+
+      {/* Modal for redirects */}
+      <Modal
+        visible={isRedirectModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsRedirectModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Redirect Chain</Text>
+            {redirectChain.map((redirect, index) => (
+              <Text key={index} style={styles.modalText}>{redirect}</Text>
+            ))}
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsRedirectModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Action buttons */}
+      <View style={styles.divider} />
+      <View style={styles.iconContainer}>
+        {type === 'URL' && (
+          <TouchableOpacity style={styles.iconButton} onPress={() => openWebView(contents)}>
+            <Ionicons name="open" size={18} color="#2196F3" />
+            <Text style={styles.iconText}>Open</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* SecureWebView Modal */}
       <Modal
@@ -250,12 +278,12 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   timestampText: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#000',
     marginBottom: 7.5,
   },
   resultText: {
-    fontSize: 12,
+    fontSize: 18,
     marginBottom: 7.5,
     textAlign: 'center',
   },
@@ -268,6 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000',
     marginBottom: 3.75,
+    marginLeft: 7.5,  // Adjust margin for alignment
   },
   iconContainer: {
     flexDirection: 'row',
@@ -299,12 +328,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffe6f0',
     borderRadius: 7.5,
     marginTop: 7.5,
+    borderWidth: 1,
+    borderColor: '#ff69b4',
   },
   moreInfoButtonText: {
     flex: 1,
     fontSize: 12,
     color: '#000',
     marginLeft: 7.5,
+  },
+  displayCheck: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7.5,
+    paddingHorizontal: 11.25,
+    backgroundColor: '#ffe6f0',
+    borderRadius: 7.5,
+    marginTop: 7.5,
   },
   closeButton: {
     position: 'absolute',
@@ -325,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 7.5,
   },
@@ -350,24 +390,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  showAllButton: {
-    backgroundColor: '#2196F3',
-    borderRadius: 7.5,
-    padding: 5,
-    marginTop: 5,
-  },
-  showAllButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    textAlign: 'center',
-  },
   webViewContainer: {
     width: '100%',
     height: '80%',
     backgroundColor: 'white',
     borderRadius: 7.5,
-    overflow: 'hidden'
-  }
+    overflow: 'hidden',
+  },
+  checksContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 3.75,
+  },
 });
 
 export default ScannedDataBox;
