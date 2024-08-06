@@ -19,8 +19,8 @@ const EmailScreen: React.FC = () => {
     try {
       // Call to start email fetching process
       const response = await getEmails(
-        'Access Token here',
-        'Refresh Token here'
+        'ya29.a0AcM612zTwLojArYvmKxAKiUKL1eBIs04ZBN2dp53BShPcPAhZigjmivq-mQmT6BgF5G1ernMKb2LCHmRgX3vlSaBj2hD8JDi7kvpexduM-_x8aG7QorKfyB2z6yJzFrwVes2Y9tHhb9vWUAqbPdiL4wqNqeE5HxZNhoaCgYKAS0SARISFQHGX2MikJkWByj0FaiKBj3jU7svGg0170',
+        '1//0g-hOrh4_72p3CgYIARAAGBASNwF-L9IrYVyuPL7WPbsm_ePtzFugduBLmdSr3UpQx7GMSt17KcS2Y_Z3v4N5wZiWua88RFjJ3Zk'
       );
       setRescanLoading(false);
     } catch (error) {
@@ -103,7 +103,7 @@ const EmailScreen: React.FC = () => {
                     )}
                     {item.qrCodeByURL && (
                       <View>
-                        <Text style={styles.qrCodeHeader}>QR Codes by URL:</Text>
+                        <Text style={styles.qrCodeHeader}>Decoded QR Codes:</Text>
                         {item.qrCodeByURL.map((qrCode, index) => (
                           <View key={index} style={styles.qrCodeContainer}>
                             {qrCode.decodedContent.map((url, i) => (
