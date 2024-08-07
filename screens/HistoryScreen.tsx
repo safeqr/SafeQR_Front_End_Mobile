@@ -1,14 +1,15 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ActivityIndicator, Dimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
 import { RootState, AppDispatch } from '../store';
 import { QRCodeType } from '../types';
 import { toggleBookmark, deleteQRCode, setScannedHistories } from '../reducers/qrCodesReducer';
-
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
 import { getScannedHistories } from '../api/qrCodeAPI';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const HistoryScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -19,9 +20,7 @@ const HistoryScreen: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [historiesError, setHistoriesError] = useState<string | null>(null);
-
   const [selectedQrCodeId, setSelectedQrCodeId] = useState<string | null>(null);
-
 
   const fetchHistories = useCallback(async () => {
     if (!userAttributes?.sub) return;
@@ -50,7 +49,6 @@ const HistoryScreen: React.FC = () => {
     }
   }, [dispatch, userAttributes]);
 
-
   const filteredQrCodes = showBookmarks ? histories.filter(qr => qr.bookmarked) : histories;
 
   const handleItemPress = (item: QRCodeType) => {
@@ -60,12 +58,9 @@ const HistoryScreen: React.FC = () => {
   const clearSelectedData = () => {
     setSelectedQrCodeId(null);
   };
-  
-  
 
   return (
     <View style={styles.container}>
-      {/* Header for toggling between History and Bookmarks */}
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => { setShowBookmarks(false); clearSelectedData(); }}>
           <Text style={!showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>History</Text>
@@ -74,25 +69,21 @@ const HistoryScreen: React.FC = () => {
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
-      
-      {/* Loading Indicator */}
+
       {historiesLoading && <ActivityIndicator size="large" color="#ff69b4" />}
 
-      {/* Display message when there are no histories or bookmarks */}
       {!historiesLoading && filteredQrCodes.length === 0 && (
         <Text style={styles.emptyMessage}>
           {showBookmarks ? 'No bookmarks available' : 'No history available'}
         </Text>
       )}
 
-      {/* Display scanned data details */}
       {selectedQrCodeId && (
-  <View style={styles.scannedDataBoxContainer}>
-    <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedData} />
-  </View>
-)}
+        <View style={styles.scannedDataBoxContainer}>
+          <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedData} />
+        </View>
+      )}
 
-      {/* List of QR codes */}
       <FlatList
         data={filteredQrCodes}
         renderItem={({ item }) => (
@@ -110,13 +101,13 @@ const HistoryScreen: React.FC = () => {
             </View>
             <View style={styles.itemRight}>
               <TouchableOpacity onPress={() => dispatch(toggleBookmark({ userId: userAttributes.sub, qrCode: item}))}>
-                <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={24} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
+                <Ionicons name={item.bookmarked ? "bookmark" : "bookmark-outline"} size={screenWidth * 0.06} color={item.bookmarked ? "#2196F3" : "#ff69b4"} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
                 setQrCodeToDelete(item.data.id);
                 setIsModalVisible(true);
                 }}>
-                <Ionicons name="close-circle-outline" size={24} color="#ff69b4" />
+                <Ionicons name="close-circle-outline" size={screenWidth * 0.06} color="#ff69b4" />
               </TouchableOpacity>
             </View>
           </View>
@@ -125,7 +116,6 @@ const HistoryScreen: React.FC = () => {
         contentContainerStyle={styles.flatListContent}
       />
 
-      {/* Modal for delete confirmation */}
       <Modal
         transparent={true}
         visible={isModalVisible}
@@ -156,6 +146,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f0fc',
     padding: 20,
+    paddingTop: screenHeight * 0.05, // Add padding from the top
   },
   headerContainer: {
     flexDirection: 'row',
@@ -163,12 +154,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTextActive: {
-    fontSize: 24,
+    fontSize: screenWidth * 0.06,
     fontWeight: 'bold',
     color: '#ff69b4',
   },
   headerTextInactive: {
-    fontSize: 24,
+    fontSize: screenWidth * 0.06,
     fontWeight: 'bold',
     color: '#ccc',
   },
@@ -177,9 +168,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#ffe6f0',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: screenWidth * 0.025,
+    borderRadius: screenWidth * 0.025,
+    marginBottom: screenWidth * 0.025,
   },
   itemLeft: {
     flex: 1,
@@ -198,31 +189,31 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
   dataText: {
-    fontSize: 12,
+    fontSize: screenWidth * 0.03,
     color: '#000',
-    marginBottom: 7
+    marginBottom: screenWidth * 0.02,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: screenWidth * 0.03,
     color: '#666',
-    marginLeft: 10,
-    flex: 1
+    marginLeft: screenWidth * 0.02,
+    flex: 1,
   },
   scanIcon: {
-    width: 40,
-    height: 40,
+    width: screenWidth * 0.1,
+    height: screenWidth * 0.1,
   },
   flatListContent: {
-    paddingBottom: 100,
+    paddingBottom: screenHeight * 0.1,
   },
   emptyMessage: {
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: screenWidth * 0.04,
     color: '#ff69b4',
-    marginVertical: 20,
+    marginVertical: screenHeight * 0.02,
   },
   scannedDataBoxContainer: {
-    marginBottom: 20,
+    marginBottom: screenHeight * 0.02,
   },
   modalContainer: {
     flex: 1,
@@ -233,18 +224,18 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '80%',
     backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: screenWidth * 0.025,
+    padding: screenWidth * 0.05,
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: screenWidth * 0.05,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: screenHeight * 0.01,
   },
   modalText: {
-    fontSize: 16,
-    marginBottom: 20,
+    fontSize: screenWidth * 0.04,
+    marginBottom: screenHeight * 0.02,
     textAlign: 'center',
   },
   modalButtons: {
@@ -255,10 +246,10 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     alignItems: 'center',
-    padding: 10,
+    padding: screenWidth * 0.025,
   },
   modalButtonText: {
-    fontSize: 16,
+    fontSize: screenWidth * 0.04,
     color: '#000',
   },
 });
