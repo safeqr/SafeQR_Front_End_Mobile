@@ -6,21 +6,19 @@ import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import CustomTabBar from '../components/CustomTabBar';
 
-// Create a bottom tab navigator
 const Tab = createBottomTabNavigator();
 
-// Main navigation component
 const AppNavigator = () => {
   return (
-    // Wrap the navigator in a NavigationContainer to manage the navigation tree
     <NavigationContainer>
-      
-      {/* Define the tab navigator with custom tab bar and initial route */}
-      <Tab.Navigator initialRouteName="QR Scanner" tabBar={props => <CustomTabBar {...props} />}>
-
-        {/* Define each tab with a name and corresponding component */}
+      <Tab.Navigator 
+        initialRouteName="QRScanner" 
+        tabBar={props => <CustomTabBar clearScanData={function (): void {
+          throw new Error('Function not implemented.');
+        } } {...props} />}
+      >
         <Tab.Screen name="History" component={HistoryScreen} />
-        <Tab.Screen name="QR Scanner" component={QRScannerScreen} />
+        <Tab.Screen name="QRScanner" component={QRScannerScreen} />
         <Tab.Screen name="Settings" component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>

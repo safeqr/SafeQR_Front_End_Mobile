@@ -76,7 +76,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     }
   };
 
-  const getRedirectIcon = () => {
+  const getSheildIcon = () => {
     if (redirects === 0) {
       return <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />;
     } else if (redirects <= 2) {
@@ -99,19 +99,24 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   };
 
   return (
+
+    
     <View style={styles.dataBox}>
+      
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
         <Ionicons name="close-circle-outline" size={screenWidth * 0.05} color="#ff69b4" />
       </TouchableOpacity>
 
+      {/* The Top Scan Icon with payload, truncated */}
       <View style={[styles.row, styles.shadowBox]}>
         <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
         <Text style={styles.payload} onPress={() => setIsContentModalVisible(true)}>
-          {truncateContent(contents, 30)} {/* Truncated content further */}
+          {truncateContent(contents, 30)} 
         </Text>
       </View>
 
       <View style={styles.mainContent}>
+        {/* Display QR Code , timestamp and Description */}
         <View style={styles.qrSection}>
           <QRCode value={contents || 'No Data'} size={screenWidth * 0.2} backgroundColor="transparent" />
         </View>
@@ -123,11 +128,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </View>
 
-     
+      {/* The Main Result in appropriate color */}
       <Text style={[styles.resultText, { color: getResultColor() }]}>
         Result: {getResultText()}
       </Text>
 
+      {/* Change the UI based on Type */}
       {type === 'URL' && (
         <>
           <View style={styles.displayCheck}>
@@ -140,33 +146,21 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
               <>
                 <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff0000" />
                 <Text style={styles.moreInfoButtonText}>Not Secure</Text>
+
+
+                
               </>
             )}
           </View>
           <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-            {getRedirectIcon()}
+            {getSheildIcon()}
             <Text style={styles.moreInfoButtonText}>Redirects</Text>
             <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
           </TouchableOpacity>
-        </>
-      )}
 
-      {type === 'SMS' && (
-        <>
-          <Text style={styles.moreInfoButtonText}>Recipient Phone Number: {details.phone || 'Undefined'}</Text>
-          <Text style={styles.moreInfoButtonText}>Message Content: {details.message || 'Undefined'}</Text>
-        </>
-      )}
 
-      {type === 'TEXT' && (
-        <TouchableOpacity style={[styles.contentBox, styles.shadowBox]} onPress={() => setIsContentModalVisible(true)}>
-          <Text style={styles.moreInfoButtonText}>
-            Content: {truncateContent(contents, 30)} {/* Truncated content further */}
-          </Text>
-        </TouchableOpacity>
-      )}
 
-      <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
+          <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
         <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#ff69b4" />
         <Text style={styles.moreInfoButtonText}>Security Headers</Text>
         <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
@@ -210,6 +204,32 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </Modal>
 
+        </>
+        
+      )}
+
+      {type === 'SMS' && (
+        <>
+          <Text style={styles.moreInfoButton}>Recipient Phone Number: {details.phone || 'Undefined'}</Text>
+          <Text style={styles.moreInfoButton}>Message Content: {details.message || 'Undefined'}</Text>
+        </>
+      )}
+
+      {type === 'TEXT' && (
+        <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsContentModalVisible(true)}>
+          <Text >
+            Content: {truncateContent(contents, 30)} {/* Truncated content further */}
+          </Text>
+          <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
+
+
+
+          
+        </TouchableOpacity>
+      )}
+
+
+      
       <Modal
         visible={isContentModalVisible}
         transparent={true}
@@ -288,7 +308,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: screenWidth * 0.0125,
+    padding: screenWidth * 0.0525,
   },
   qrSection: {
     flex: 1,
@@ -306,7 +326,7 @@ const styles = StyleSheet.create({
   
   
   timestampText: {
-    fontSize: screenWidth * 0.0275,
+    fontSize: screenWidth * 0.03,
     color: '#000',
     marginBottom: screenWidth * 0.01875,
   },

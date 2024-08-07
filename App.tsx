@@ -30,16 +30,22 @@ const App: React.FC = () => {
     <Provider store={store}>
       <QRCodeContext.Provider value={{ scannedData, setScannedData }}>
         <NavigationContainer>
-          <Tab.Navigator
-            initialRouteName="QRScanner"
-            tabBar={(props) => <CustomTabBar {...props} clearScanData={clearScanData} />}
-          >
+        <Tab.Navigator
+          initialRouteName="QRScanner"
+          tabBar={(props) => <CustomTabBar {...props} clearScanData={clearScanData} />}
+          screenOptions={{ headerShown: false }} // turn of header for all screens
+        >
             <Tab.Screen name="History" component={HistoryScreen} />
             <Tab.Screen name="QRScanner">
               {(props) => <QRScannerScreen {...props} clearScanData={clearScanData} />}
             </Tab.Screen>
             <Tab.Screen name="Email" component={EmailScreen} />
           </Tab.Navigator>
+
+
+
+
+          
         </NavigationContainer>
       </QRCodeContext.Provider>
     </Provider>

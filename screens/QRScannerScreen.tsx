@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Image, Dimensions } from 'react-native';
 import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -7,9 +7,10 @@ import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
-import { addQRCode } from '../reducers/qrCodesReducer';
 import { scanQRCode, getUserInfo } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
   const navigation = useNavigation(); // Navigation hook
@@ -141,8 +142,9 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>SafeQR</Text>
-      <Text style={styles.welcomeText}>Welcome to SafeQR code Scanner</Text>
+      <Text style={styles.titleText}>Welcome to</Text>
+      <Image source={require('../assets/SafeQR_Logo 1.png')} style={styles.logo} />
+      <Text style={styles.welcomeText}>Please point the camera at the QR Code</Text>
 
       <View style={styles.cameraContainer}>
         {cameraVisible && (
@@ -155,27 +157,26 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
         )}
 
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
-          <Ionicons name="flashlight" size={24} color="#fff" />
+          <Ionicons name="flashlight" size={screenWidth * 0.06} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={readQRFromImage} style={styles.galleryButton}>
-          <Ionicons name="image" size={24} color="#fff" />
+          <Ionicons name="image" size={screenWidth * 0.06} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Scanned Data Box */}
       {isScannedDataBoxVisible && (
-  <View style={styles.scannedDataBoxPopup}>
-    <ScannedDataBox
-      qrCodeId={qrCodeId}
-      clearScanData={() => setIsScannedDataBoxVisible(false)}
-    />
-  </View>
-)}
-
+        <View style={styles.scannedDataBoxPopup}>
+          <ScannedDataBox
+            qrCodeId={qrCodeId}
+            clearScanData={() => setIsScannedDataBoxVisible(false)}
+          />
+        </View>
+      )}
 
       {/* Settings Icon */}
       <TouchableOpacity onPress={() => setIsSettingsModalVisible(true)} style={styles.settingsButton}>
-        <Ionicons name="settings" size={24} color="#000" />
+        <Ionicons name="settings" size={screenWidth * 0.06} color="#000" />
       </TouchableOpacity>
 
       {/* Settings Modal */}
@@ -205,12 +206,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f0fc',
     padding: 20,
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ff69b4',
+  titleText: {
     textAlign: 'center',
-    marginBottom: 20,
+    fontSize: 20,
+    marginTop: screenHeight * 0.05,
+    color: 'black',
+  },
+  logo: {
+    alignSelf: 'center',
+    width: screenWidth * 0.5,
+    height: screenWidth * 0.2,
+    resizeMode: 'contain',
+    marginVertical: 10,
+  },
+  welcomeText: {
+    textAlign: 'center',
+    fontSize: 20,
+    marginVertical: 10,
+    color: 'black',
+  },
+  cameraContainer: {
+    height: '60%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: screenHeight * 0.05,
+    right: 20,
   },
   splashContainer: {
     flex: 1,
@@ -220,38 +245,31 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
-  cameraContainer: {
-    height: '60%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
   camera: {
     width: '100%',
     height: '100%',
   },
   flashButton: {
     position: 'absolute',
-    bottom: 20,
-    left: 100,
-    width: 50,
-    height: 50,
+    bottom: screenHeight * 0.025,
+    left: screenWidth * 0.2,
+    width: screenWidth * 0.125,
+    height: screenWidth * 0.125,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
-    borderRadius: 25,
+    borderRadius: screenWidth * 0.0625,
   },
   galleryButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 100,
-    width: 50,
-    height: 50,
+    bottom: screenHeight * 0.025,
+    right: screenWidth * 0.2,
+    width: screenWidth * 0.125,
+    height: screenWidth * 0.125,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
-    borderRadius: 25,
+    borderRadius: screenWidth * 0.0625,
   },
   scannedDataBoxPopup: {
     position: 'absolute',
@@ -259,51 +277,39 @@ const styles = StyleSheet.create({
     left: '5%',
     right: '5%',
     zIndex: 2,
-    backgroundColor: 'white', // Optional: Set a background color if needed
-    borderRadius: 10, // Optional: Add rounded corners
-    padding: 10, // Optional: Add padding around the content
-    elevation: 5, // Optional: Add elevation for shadow effect
+    backgroundColor: 'white',
+    borderRadius: screenWidth * 0.025,
+    padding: screenWidth * 0.025,
+    elevation: 5,
   },
-  
-  welcomeText: {
-    textAlign: 'center',
-    fontSize: 20,
-    marginVertical: 10,
-    color: 'black',
-  },
-  settingsButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    zIndex: 2,
-  },
+
   settingsModal: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   settingsModalContainer: {
-    flex: 2,
-    justifyContent: 'center', // Center the modal vertically
+    flex: 1,
+    justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
- settingsModalContent: {
+  settingsModalContent: {
     width: '100%',
-    height: '80%', // Increase the height to make the modal taller
+    height: '80%',
     backgroundColor: 'white',
-    padding: 20,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    padding: screenWidth * 0.05,
+    borderTopLeftRadius: screenWidth * 0.025,
+    borderTopRightRadius: screenWidth * 0.025,
     alignItems: 'center',
   },
   closeButton: {
-    marginTop: 10,
-    padding: 10,
+    marginTop: screenHeight * 0.01,
+    padding: screenWidth * 0.025,
     backgroundColor: '#ff69b4',
-    borderRadius: 5,
+    borderRadius: screenWidth * 0.0125,
   },
   closeButtonText: {
     color: 'white',
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default QRScannerScreen;

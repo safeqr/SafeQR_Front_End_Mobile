@@ -46,7 +46,8 @@
     "react-native-svg": "15.2.0",
     "react-native-webview": "^13.8.6",
     "react-redux": "^9.1.2",
-    "redux": "^5.0.1"
+    "redux": "^5.0.1",
+    "safeqr": "file:"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
