@@ -3,6 +3,10 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, 
 import { Ionicons } from '@expo/vector-icons';
 import { getEmails, getScannedEmails, getUserInfo } from '../api/qrCodeAPI';
 
+import { useAuthenticator } from '@aws-amplify/ui-react-native';
+import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
+import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -14,6 +18,7 @@ const EmailScreen: React.FC = () => {
   const [error, setError] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [bannerOpacity] = useState(new Animated.Value(0));
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   
 
   useEffect(() => {
@@ -24,8 +29,9 @@ const EmailScreen: React.FC = () => {
   // Function to fetch user email
   const fetchUserEmail = async () => {
     try {
+      console.log('fetchUserEmail triggered');
       const userInfo = await getUserInfo();
-      setUserEmail(userInfo.email); // Adjust this line based on the actual structure of userInfo
+      setUserEmail(userInfo.email); 
     } catch (error) {
       console.error('Error fetching user email:', error);
       setUserEmail('Error fetching email');
@@ -171,98 +177,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',
-    padding: 10,
-    paddingTop: 40, // Padding from the top to align content
+    paddingHorizontal: screenWidth * 0.025,
+    paddingTop: screenHeight * 0.05,
     paddingBottom: screenHeight * 0.1,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: screenHeight * 0.02,
   },
   emailHeader: {
-    fontSize: 18,
+    fontSize: screenWidth * 0.045,
     fontWeight: 'bold',
     color: '#ff69b4',
   },
+  emailListContainer: {
+    flex: 1,
+  },
   refreshButton: {
-    padding: 5,
+    padding: screenWidth * 0.025,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    color: '#ff69b4',
+    fontSize: screenWidth * 0.04,
+  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  button: {
-    backgroundColor: '#ff69b4',
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  errorText: {
+    color: '#ff69b4',
+    fontSize: screenWidth * 0.04,
   },
   rescanIndicator: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: screenHeight * 0.015,
   },
-  emailListContainer: {
-    flex: 1,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  rescanText: {
     color: '#ff69b4',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: screenWidth * 0.04,
   },
   messageContainer: {
     backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: screenWidth * 0.025,
+    borderRadius: screenWidth * 0.025,
+    marginBottom: screenHeight * 0.015,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: screenHeight * 0.002 },
+    shadowRadius: screenWidth * 0.025,
     elevation: 2,
   },
   subject: {
-    fontSize: 16,
+    fontSize: screenWidth * 0.04,
     fontWeight: 'bold',
     color: '#000',
   },
   date: {
-    fontSize: 14,
+    fontSize: screenWidth * 0.035,
     color: '#555',
   },
   qrCodeContainer: {
-    marginBottom: 10, // Add more space between the QR codes
+    marginBottom: screenHeight * 0.015,
   },
   qrCodeLink: {
-    fontSize: 14,
+    fontSize: screenWidth * 0.035,
     color: '#0000ff',
     textDecorationLine: 'underline',
-    marginVertical: 5, // Add vertical margin for spacing
+    marginVertical: screenHeight * 0.005,
   },
   qrCodeHeader: {
-    fontSize: 16,
+    fontSize: screenWidth * 0.04,
     fontWeight: 'bold',
     color: '#ff69b4',
-    marginBottom: 5,
-    marginTop: 10, // Add margin at the top for spacing from the previous element
+    marginBottom: screenHeight * 0.01,
+    marginTop: screenHeight * 0.015,
   },
   banner: {
     position: 'absolute',
