@@ -149,11 +149,15 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       <View style={styles.cameraContainer}>
         {cameraVisible && (
           <CameraView
-            onBarcodeScanned={scanned ? undefined : ({ data }) => handlePayload(data)}
-            barcodeScannerSettings={{ barcodeTypes: ['qr', 'pdf417'] }}
-            style={styles.camera}
-            enableTorch={enableTorch}
-          />
+          onBarcodeScanned={scanned ? undefined : ({ data, type }) => {
+            console.log("Barcode Type:", type);  // Log the type of barcode scanned
+            console.log("Raw Scanned Barcode Data:", data);  // Log the raw barcode data
+            handlePayload(data);
+          }}
+          style={styles.camera}
+          enableTorch={enableTorch}
+        />
+        
         )}
 
         <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
