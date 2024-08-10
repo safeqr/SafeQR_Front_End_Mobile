@@ -3,10 +3,8 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, 
 import { Ionicons } from '@expo/vector-icons';
 import { getEmails, getScannedEmails, getUserInfo } from '../api/qrCodeAPI';
 
-import { useAuthenticator } from '@aws-amplify/ui-react-native';
-import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
-import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
-
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { Buffer } from 'buffer';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -18,9 +16,7 @@ const EmailScreen: React.FC = () => {
   const [error, setError] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [bannerOpacity] = useState(new Animated.Value(0));
-  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   
-
   useEffect(() => {
     startPollingForScannedEmails();
     fetchUserEmail();
@@ -42,13 +38,29 @@ const EmailScreen: React.FC = () => {
   const initiateEmailFetch = async () => {
     setRescanLoading(true);
     showBanner();
+
     try {
-      // Call to start email fetching process
-      const response = await getEmails(
-        'Google Access Token',
-        'Refresh Token'
-      );
-      setRescanLoading(false);
+      // Fetch the current authentication session
+      const { tokens } = await fetchAuthSession();
+      const idToken = tokens.idToken.toString();
+      
+      const parts = idToken.split('.');
+      const payload = parts[1];
+      const decodedPayload = Buffer.from(payload, 'base64').toString('utf8');
+      const parsedPayload = JSON.parse(decodedPayload);
+      
+      const googleAccessToken = parsedPayload["custom:access_token"];
+      const googleRefreshToken = parsedPayload["custom:refresh_token"];
+      
+      if (googleAccessToken && googleRefreshToken) {
+        // Use the fetched tokens to initiate email fetching
+        const response = await getEmails(googleAccessToken, googleRefreshToken);
+        setRescanLoading(false);
+      } else {
+        console.error('Google access token or refresh token not found in the payload');
+        setError('Google access token or refresh token missing.');
+        setRescanLoading(false);
+      }
     } catch (error) {
       console.error('Error initiating email fetch:', error);
       setError('Error rescanning inbox.');
