@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   scannedDataBoxPopup: {
     position: 'absolute',
-    top: '10%',
+    top: '30%', 
     left: '5%',
     right: '5%',
     zIndex: 2,
@@ -281,7 +281,8 @@ const styles = StyleSheet.create({
     borderRadius: screenWidth * 0.025,
     padding: screenWidth * 0.025,
     elevation: 5,
-  },
+},
+
 
   settingsModal: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background

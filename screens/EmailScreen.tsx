@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getEmails, getScannedEmails, getUserInfo } from '../api/qrCodeAPI';
+
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const EmailScreen: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -11,6 +14,7 @@ const EmailScreen: React.FC = () => {
   const [error, setError] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [bannerOpacity] = useState(new Animated.Value(0));
+  
 
   useEffect(() => {
     startPollingForScannedEmails();
@@ -35,8 +39,8 @@ const EmailScreen: React.FC = () => {
     try {
       // Call to start email fetching process
       const response = await getEmails(
-        'ya29.a0AcM612zTwLojArYvmKxAKiUKL1eBIs04ZBN2dp53BShPcPAhZigjmivq-mQmT6BgF5G1ernMKb2LCHmRgX3vlSaBj2hD8JDi7kvpexduM-_x8aG7QorKfyB2z6yJzFrwVes2Y9tHhb9vWUAqbPdiL4wqNqeE5HxZNhoaCgYKAS0SARISFQHGX2MikJkWByj0FaiKBj3jU7svGg0170',
-        '1//0g-hOrh4_72p3CgYIARAAGBASNwF-L9IrYVyuPL7WPbsm_ePtzFugduBLmdSr3UpQx7GMSt17KcS2Y_Z3v4N5wZiWua88RFjJ3Zk'
+        'Google Access Token',
+        'Refresh Token'
       );
       setRescanLoading(false);
     } catch (error) {
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f0fc',
     padding: 10,
     paddingTop: 40, // Padding from the top to align content
+    paddingBottom: screenHeight * 0.1,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -265,10 +270,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#ff69b4',
-    padding: 10,
+    paddingVertical: 20, // Increase this value for more height
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
   bannerText: {
     color: '#fff',
     fontWeight: 'bold',
