@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { getEmails, getScannedEmails, getUserInfo } from '../api/qrCodeAPI';
-
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { Buffer } from 'buffer';
 
@@ -18,8 +18,6 @@ const EmailScreen: React.FC = () => {
   const [bannerOpacity] = useState(new Animated.Value(0));
   
   useEffect(() => {
-    startInboxScanning();
-    startPollingForScannedEmails();
     fetchUserEmail();
   }, []);
 
@@ -87,7 +85,7 @@ const EmailScreen: React.FC = () => {
   };
 
   // Function to poll for scanned emails
-  const startPollingForScannedEmails = () => {
+  const startPollingForScannedEmails = useCallback(() => {
     const pollingInterval = setInterval(async () => {
       try {
         const scannedEmails = await getScannedEmails();
@@ -102,8 +100,8 @@ const EmailScreen: React.FC = () => {
       }
     }, 10000); // Poll every 10 seconds
 
-    return () => clearInterval(pollingInterval);
-  };
+    return () => clearInterval(pollingInterval); // Cleanup the interval
+  }, []);
 
   const handleSelectMessage = (message) => {
     setSelectedMessage(selectedMessage === message ? null : message);
@@ -118,6 +116,17 @@ const EmailScreen: React.FC = () => {
       setError('Error refreshing emails.');
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      startInboxScanning();
+      const stopPolling = startPollingForScannedEmails();
+
+      return () => {
+        stopPolling(); // Stop polling when the screen is not in focus
+      };
+    }, [startPollingForScannedEmails])
+  );
 
   return (
     <View style={styles.container}>
@@ -195,8 +204,6 @@ const EmailScreen: React.FC = () => {
     </View>
   );
 };
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -306,4 +313,5 @@ const styles = StyleSheet.create({
     fontSize: screenWidth * 0.04,
   },
 });
+
 export default EmailScreen;
