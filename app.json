@@ -26,6 +26,17 @@
         "projectId": "88ad983d-5ca3-44e6-bc1b-8a9a941af992"
       }
     },
+    "plugins": [
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera.",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "$(PRODUCT_NAME) needs access to your Microphone.",
+          "enableCodeScanner": true
+        }
+      ]
+    ],
     "owner": "piggyinu"
   }
 }

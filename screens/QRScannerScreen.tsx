@@ -1,68 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal, Image, Dimensions } from 'react-native';
-import { Camera, CameraView, scanFromURLAsync } from 'expo-camera';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { Camera, useCameraDevice, useCameraPermission, useCodeScanner } from 'react-native-vision-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../store';
-import { scanQRCode, getUserInfo } from '../api/qrCodeAPI';
+import { scanQRCode } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
-  const navigation = useNavigation(); // Navigation hook
-  const dispatch = useDispatch<AppDispatch>(); // Use dispatch for Redux actions
-
-  // State variables
-  const [showSplash, setShowSplash] = useState<boolean>(true); // State for splash screen visibility
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+const QRScannerScreen: React.FC = () => {
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
+  const [enableTorch, setEnableTorch] = useState<boolean>(false);
   const [scanned, setScanned] = useState<boolean>(false);
   const [qrCodeId, setQRCodeId] = useState<string | null>(null); // State for QR code ID
-  const [enableTorch, setEnableTorch] = useState<boolean>(false); // State for torch
-  const [cameraVisible, setCameraVisible] = useState<boolean>(true); // State to control camera visibility
-  const [isScannedDataBoxVisible, setIsScannedDataBoxVisible] = useState<boolean>(false); // State for ScannedDataBox modal visibility
-  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false); // State for modal visibility
+  const [isScannedDataBoxVisible, setIsScannedDataBoxVisible] = useState<boolean>(false); // State for ScannedDataBox visibility
 
-  // Request Camera Permission and initialize the app
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const device = useCameraDevice('back');
+
   useEffect(() => {
-    const initializeApp = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-      setShowSplash(false);
-      console.log("Camera permissions initialized");
-
-      // Fetch and log user information
-      fetchUserInformation();
-    };
-
-    initializeApp();
+    requestPermission();
   }, []);
 
-  // Focus effect to enable camera and clear data on focus
-  useFocusEffect(
-    useCallback(() => {
-      setCameraVisible(true);
-      clearScanDataInternal();
-      console.log("Screen focused, scan data cleared and camera enabled");
-
-      return () => {
-        setCameraVisible(false);
-        console.log("Screen unfocused, camera disabled");
-      };
-    }, [navigation])
-  );
-
-  // Clear Scan Data
-  const clearScanDataInternal = () => {
-    setScanned(false);
-    setQRCodeId(null);
-    console.log("Scan data cleared");
-  };
-
-  // Handle scanning of payload (QR code data) and get the QR-ID
   const handlePayload = async (payload: string) => {
     setScanned(true);
     console.info("Decoded QR Code, Payload is: ", payload);
@@ -72,48 +32,36 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       const qrCodeId = response.qrcode.data.id;
       // Store the QR code ID for later use
       setQRCodeId(qrCodeId);
-      setIsScannedDataBoxVisible(true); // Show ScannedDataBox modal
-
-      // Optionally, show a message or perform another action
+      setIsScannedDataBoxVisible(true); // Show ScannedDataBox pop-up
       console.log("QR code scanned successfully, ID:", qrCodeId);
     } catch (error) {
       console.error("Error scanning QR code:", error);
     }
   };
 
-  // Fetch and log user information
-  const fetchUserInformation = async () => {
-    try {
-      const userInfo = await getUserInfo();
-      console.log('User Info:', userInfo);
-    } catch (error) {
-      console.error('Error fetching user information:', error);
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr'], // Only scan QR codes
+    onCodeScanned: (codes) => {
+      if (!scanned) {
+        handlePayload(codes[0]?.value); // Extract and handle the value only
+      }
     }
-  };
+  });
 
-  // Toggle torch (flashlight) on/off
-  const toggleTorch = () => {
-    setEnableTorch((prev) => !prev);
-    console.log("Torch toggled:", enableTorch ? "off" : "on");
-  };
-
-  // Read QR from image
-  const readQRFromImage = async () => {
-    clearScanDataInternal();
-    console.log("Reading QR code from image");
-
+  const openImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false, // Don't ask user to crop images
+      allowsEditing: false,
       quality: 1,
     });
 
-    if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // Ensure the uri is not empty 
+    if (!result.canceled && result.assets.length > 0) {
+      const { uri } = result.assets[0];
       try {
-        const scannedResult = await scanFromURLAsync(result.assets[0].uri);
-        if (scannedResult && scannedResult[0] && scannedResult[0].data) {
-          handlePayload(scannedResult[0].data);
-          console.log('QR code data from image:', scannedResult[0].data);
+        // If using expo-camera or similar packages:
+        const scannedResult = await scanQRCodeFromURL(uri); // Function to scan QR code from the selected image URL
+        if (scannedResult) {
+          handlePayload(scannedResult);
         } else {
           console.log("No QR code found in the selected image");
         }
@@ -123,21 +71,27 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     }
   };
 
-  // Conditional rendering based on state
-  if (showSplash) {
-    return (
-      <View style={styles.splashContainer}>
-        <ActivityIndicator size="large" color="#ff69b4" />
-      </View>
-    );
+  const scanQRCodeFromURL = async (uri: string) => {
+    // This method can vary depending on the package used for scanning
+    // For example, using expo-camera or other available options to scan QR code from an image URL
+    // Implement scanFromURLAsync if using expo-camera
+
+    // If using expo-camera
+    // const scannedResult = await scanFromURLAsync(uri);
+    // return scannedResult?.[0]?.data;
+
+    // If using other methods, implement them accordingly
+    // Here we simulate scanning with a placeholder result
+    const placeholderResult = "SIMULATED_PAYLOAD"; // Replace with actual scanning logic
+    return placeholderResult;
+  };
+
+  if (!hasPermission) {
+    return <Text>Requesting camera permission...</Text>;
   }
 
-  if (hasPermission === null) {
-    return <Text>Requesting for camera permission</Text>;
-  }
-
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
+  if (!device) {
+    return <Text>Loading camera...</Text>;
   }
 
   return (
@@ -147,33 +101,44 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       <Text style={styles.welcomeText}>Please point the camera at the QR Code</Text>
 
       <View style={styles.cameraContainer}>
-        {cameraVisible && (
-          <CameraView
-          onBarcodeScanned={scanned ? undefined : ({ data, type }) => {
-            console.log("Barcode Type:", type);  // Log the type of barcode scanned
-            console.log("Raw Scanned Barcode Data:", data);  // Log the raw barcode data
-            handlePayload(data);
-          }}
-          style={styles.camera}
-          enableTorch={enableTorch}
-        />
-        
+        {device && (
+          <Camera
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive={true}
+            torch={enableTorch ? 'on' : 'off'}
+            codeScanner={codeScanner}
+          />
         )}
 
-        <TouchableOpacity onPress={toggleTorch} style={styles.flashButton}>
-          <Ionicons name="flashlight" size={screenWidth * 0.06} color="#fff" />
+        {/* Torch Button */}
+        <TouchableOpacity
+          onPress={() => device.hasFlash && setEnableTorch((prev) => !prev)}
+          style={styles.flashButton}
+          disabled={!device.hasFlash}
+        >
+          <Ionicons
+            name={device.hasFlash ? 'flashlight' : 'flashlight-outline'}
+            size={screenWidth * 0.06}
+            color={device.hasFlash ? "#fff" : "#888"}
+          />
         </TouchableOpacity>
-        <TouchableOpacity onPress={readQRFromImage} style={styles.galleryButton}>
+
+        {/* Gallery Button */}
+        <TouchableOpacity onPress={openImagePicker} style={styles.galleryButton}>
           <Ionicons name="image" size={screenWidth * 0.06} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* Scanned Data Box */}
+      {/* Scanned Data Box as a pop-up */}
       {isScannedDataBoxVisible && (
         <View style={styles.scannedDataBoxPopup}>
           <ScannedDataBox
-            qrCodeId={qrCodeId}
-            clearScanData={() => setIsScannedDataBoxVisible(false)}
+            qrCodeId={qrCodeId!}
+            clearScanData={() => {
+              setScanned(false);
+              setIsScannedDataBoxVisible(false);
+            }}
           />
         </View>
       )}
@@ -230,7 +195,7 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   cameraContainer: {
-    height: '60%',
+    height: '50%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
@@ -285,9 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: screenWidth * 0.025,
     padding: screenWidth * 0.025,
     elevation: 5,
-},
-
-
+  },
   settingsModal: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },

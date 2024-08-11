@@ -9,7 +9,10 @@ export default ({ config }) => {
     ...config,
     extra: {
       API_BASE_URL: process.env.BASE_URL,
-      ENVIRONMENT: process.env.NODE_ENV
+      ENVIRONMENT: process.env.NODE_ENV,
+      eas: {
+        projectId: "88ad983d-5ca3-44e6-bc1b-8a9a941af992"
+      }
     },
   };
 };
