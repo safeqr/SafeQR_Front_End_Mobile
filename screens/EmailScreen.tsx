@@ -18,6 +18,7 @@ const EmailScreen: React.FC = () => {
   const [bannerOpacity] = useState(new Animated.Value(0));
   
   useEffect(() => {
+    startInboxScanning();
     startPollingForScannedEmails();
     fetchUserEmail();
   }, []);
@@ -35,7 +36,7 @@ const EmailScreen: React.FC = () => {
   };
 
   // Function to initiate the email fetching process
-  const initiateEmailFetch = async () => {
+  const startInboxScanning = async () => {
     setRescanLoading(true);
     showBanner();
 
@@ -54,7 +55,7 @@ const EmailScreen: React.FC = () => {
       
       if (googleAccessToken && googleRefreshToken) {
         // Use the fetched tokens to initiate email fetching
-        const response = await getEmails(googleAccessToken, googleRefreshToken);
+        await getEmails(googleAccessToken, googleRefreshToken);
         setRescanLoading(false);
       } else {
         console.error('Google access token or refresh token not found in the payload');
@@ -92,20 +93,30 @@ const EmailScreen: React.FC = () => {
         const scannedEmails = await getScannedEmails();
         if (scannedEmails) {
           setEmailData(scannedEmails);
-          clearInterval(pollingInterval);
           setLoading(false);
         }
       } catch (error) {
         console.error('Error fetching scanned emails:', error);
         setError('Error fetching emails.');
-        clearInterval(pollingInterval);
         setLoading(false);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollingInterval);
   };
 
   const handleSelectMessage = (message) => {
     setSelectedMessage(selectedMessage === message ? null : message);
+  };
+
+  const refreshScannedEmails = async () => {
+    try {
+      const scannedEmails = await getScannedEmails();
+      setEmailData(scannedEmails);
+    } catch (error) {
+      console.error('Error refreshing scanned emails:', error);
+      setError('Error refreshing emails.');
+    }
   };
 
   return (
@@ -125,7 +136,7 @@ const EmailScreen: React.FC = () => {
         <>
           <View style={styles.headerContainer}>
             <Text style={styles.emailHeader}>Email: {userEmail}</Text>
-            <TouchableOpacity onPress={initiateEmailFetch} style={styles.refreshButton}>
+            <TouchableOpacity onPress={refreshScannedEmails} style={styles.refreshButton}>
               <Ionicons name="refresh" size={24} color="#ff69b4" />
             </TouchableOpacity>
           </View>
@@ -184,6 +195,8 @@ const EmailScreen: React.FC = () => {
     </View>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -275,20 +288,22 @@ const styles = StyleSheet.create({
   },
   banner: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: screenHeight * 0.4, // Adjusts the banner to appear in the middle of the screen
+    left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
+    right: screenWidth * 0.1,
     backgroundColor: '#ff69b4',
-    paddingVertical: 20, // Increase this value for more height
-    paddingHorizontal: 10,
+    paddingVertical: screenHeight * 0.02, // Adjust the height of the banner
+    paddingHorizontal: screenWidth * 0.05,
+    borderRadius: screenWidth * 0.05,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10, // Ensure it appears above other elements
   },
-  
   bannerText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: screenWidth * 0.04,
   },
 });
-
 export default EmailScreen;
