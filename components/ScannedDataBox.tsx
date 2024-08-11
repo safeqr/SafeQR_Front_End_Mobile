@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Linking, Clipboard } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { Feather, Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { getQRCodeDetails } from '../api/qrCodeAPI';
 import SecureWebView from '../components/SecureWebView';
 
@@ -20,7 +20,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState('');
 
-  // Fetch QR code details on component mount or qrCodeId change
   useEffect(() => {
     const fetchQRDetails = async () => {
       try {
@@ -49,17 +48,16 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const details = qrDetails.details || {};
   const type = data.info?.type || 'Undefined';
   const contents = data.contents || 'Undefined';
-  const secureConnection = details.hstsHeader?.some((header: string) => header.includes('HSTS Header'));
-  const redirects = details.redirect || 0;
-  const securityHeaders = details.hstsHeader && details.hstsHeader.length > 0 ? details.hstsHeader : [];
-
-  const redirectChain = details.redirectChain || ['No Redirects'];
+  const result = data.result || 'Unknown';
+  const ssid = details.ssid || 'Undefined';
+  const encryption = details.encryption || 'NO';
+  const hidden = details.hidden ? 'Hidden' : 'Visible';
 
   // Determine the result text based on the security status
   const getResultText = () => {
-    if (!secureConnection || redirects > 0) {
+    if (result === 'UNSAFE') {
       return 'DANGEROUS';
-    } else if (secureConnection && redirects === 0) {
+    } else if (result === 'SAFE') {
       return 'SAFE';
     } else {
       return 'WARNING';
@@ -68,33 +66,16 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
 
   // Get color corresponding to the result text
   const getResultColor = () => {
-    const result = getResultText();
-    if (result === 'DANGEROUS') {
+    const resultText = getResultText();
+    if (resultText === 'DANGEROUS') {
       return '#ff0000'; // Red
-    } else if (result === 'WARNING') {
+    } else if (resultText === 'WARNING') {
       return '#ffa500'; // Orange
-    } else if (result === 'SAFE') {
+    } else if (resultText === 'SAFE') {
       return '#44c167'; // Green
     } else {
       return '#000000'; // Black for unknown
     }
-  };
-
-  // Get icon based on the number of redirects
-  const getSheildIcon = () => {
-    if (redirects === 0) {
-      return <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />;
-    } else if (redirects <= 2) {
-      return <Ionicons name="shield" size={screenWidth * 0.045} color="#ffa500" />;
-    } else {
-      return <MaterialCommunityIcons name="shield-alert" size={screenWidth * 0.045} color="#ff0000" />;
-    }
-  };
-
-  // Open URL in a WebView
-  const openWebView = (url: string) => {
-    setWebViewUrl(url);
-    setIsWebViewVisible(true);
   };
 
   // Truncate content string to specified length
@@ -103,6 +84,28 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       return `${content.substring(0, length)}...`;
     }
     return content;
+  };
+
+  // Function to open the Wi-Fi configuration in the OS
+  const handleOpenUrl = (url: string) => {
+    Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
+  };
+
+  // Function to copy text content to clipboard
+  const handleCopyToClipboard = () => {
+    Clipboard.setString(contents);
+  };
+
+  // Function to send SMS
+  const handleSendSMS = () => {
+    const smsUrl = `sms:${contents}`;
+    Linking.openURL(smsUrl).catch(err => console.error('Error sending SMS:', err));
+  };
+
+  // Function to make a phone call
+  const handleMakeCall = () => {
+    const telUrl = `tel:${contents}`;
+    Linking.openURL(telUrl).catch(err => console.error('Error making call:', err));
   };
 
   return (
@@ -128,7 +131,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         <View style={styles.detailsSection}>
           <Text style={styles.timestampText}>{data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Invalid Date'}</Text>
           <Text style={styles.typeText}>Description: {type}</Text>
-          <Text>{'\n'}</Text>
         </View>
       </View>
 
@@ -137,101 +139,91 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         Result: {getResultText()}
       </Text>
 
-      {/* Change the UI based on Type */}
+      {/* URL Type */}
       {type === 'URL' && (
         <>
           <View style={styles.displayCheck}>
-            {secureConnection ? (
+            {details.redirectChain?.length === 0 ? (
               <>
                 <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
-                <Text style={styles.moreInfoButtonText}>Secure Connection</Text>
+                <Text style={styles.moreInfoButtonText}>No Redirects</Text>
               </>
             ) : (
               <>
                 <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff0000" />
-                <Text style={styles.moreInfoButtonText}>Not Secure</Text>
+                <Text style={styles.moreInfoButtonText}>Redirects</Text>
               </>
             )}
           </View>
 
           {/* Security Headers Button */}
-          {securityHeaders.length > 0 ? (
-  <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
-    <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
-    <Text style={styles.moreInfoButtonText}>Security Headers</Text>
-    <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
-  </TouchableOpacity>
-) : (
-  <View style={styles.displayCheck}>
-    <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color="#ffa500" />
-    <Text style={styles.moreInfoButtonText}>No Security Headers</Text>
-  </View>
-)}
-
+          {details.securityHeaders?.length > 0 ? (
+            <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
+              <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
+              <Text style={styles.moreInfoButtonText}>Security Headers</Text>
+              <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.displayCheck}>
+              <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color="#ffa500" />
+              <Text style={styles.moreInfoButtonText}>No Security Headers</Text>
+            </View>
+          )}
 
           {/* Redirects Button */}
           <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-            {getSheildIcon()}
+            <Ionicons name="shield" size={screenWidth * 0.045} color="#ffa500" />
             <Text style={styles.moreInfoButtonText}>Redirects</Text>
             <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
           </TouchableOpacity>
 
-          {/* Security Headers Modal */}
-          <Modal
-            visible={isModalVisible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setIsModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Security Headers</Text>
-                {securityHeaders.map((header, index) => (
-                  <Text key={index} style={styles.modalText}>{header}</Text>
-                ))}
-                <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
-                  <Text style={styles.closeModalButtonText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          {/* Redirect Chain Modal */}
-          <Modal
-            visible={isRedirectModalVisible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setIsRedirectModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Redirect Chain</Text>
-                {redirectChain.map((redirect, index) => (
-                  <Text key={index} style={styles.modalText}>{redirect}</Text>
-                ))}
-                <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsRedirectModalVisible(false)}>
-                  <Text style={styles.closeModalButtonText}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
+          {/* URL Open Button */}
+          <View style={styles.iconContainer}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => handleOpenUrl(contents)}>
+              <Ionicons name="open" size={screenWidth * 0.045} color="#2196F3" />
+              <Text style={styles.iconText}>Open</Text>
+            </TouchableOpacity>
+          </View>
         </>
       )}
 
-      {/* SMS Type */}
-      {type === 'SMS' && (
+      {/* WIFI Type */}
+      {type === 'WIFI' && (
         <>
-          <Text style={styles.moreInfoButton}>Recipient Phone Number: {details.phone || 'Undefined'}</Text>
-          <Text style={styles.moreInfoButton}>Message Content: {details.message || 'Undefined'}</Text>
+          <Text style={styles.moreInfoButton}>SSID: {ssid}</Text>
+          <Text style={styles.moreInfoButton}>Encryption: {encryption}</Text>
+          <Text style={styles.moreInfoButton}>Visibility: {hidden === 'Hidden' ? '✔️' : '❌'}</Text>
         </>
       )}
 
       {/* TEXT Type */}
       {type === 'TEXT' && (
-        <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsContentModalVisible(true)}>
-          <Text>Content: {truncateContent(contents, 30)}</Text>
-          <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
-        </TouchableOpacity>
+        <View style={styles.iconContainer}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleCopyToClipboard}>
+            <Ionicons name="clipboard-outline" size={screenWidth * 0.045} color="#2196F3" />
+            <Text style={styles.iconText}>Copy</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* SMS Type */}
+      {type === 'SMS' && (
+        <View style={styles.iconContainer}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleSendSMS}>
+            <Ionicons name="chatbubble-outline" size={screenWidth * 0.045} color="#2196F3" />
+            <Text style={styles.iconText}>Send SMS</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* TEL Type */}
+      {type === 'TEL' && (
+        <View style={styles.iconContainer}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleMakeCall}>
+            <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />
+            <Text style={styles.iconText}>Call</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Full Content Modal */}
@@ -254,15 +246,45 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </Modal>
 
-      {/* URL Open Button */}
-      {type === 'URL' && (
-        <View style={styles.iconContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => openWebView(contents)}>
-            <Ionicons name="open" size={screenWidth * 0.045} color="#2196F3" />
-            <Text style={styles.iconText}>Open</Text>
-          </TouchableOpacity>
+      {/* Security Headers Modal */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Security Headers</Text>
+            {details.securityHeaders?.map((header: string, index: number) => (
+              <Text key={index} style={styles.modalText}>{header}</Text>
+            ))}
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
+
+      {/* Redirect Chain Modal */}
+      <Modal
+        visible={isRedirectModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsRedirectModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Redirect Chain</Text>
+            {details.redirectChain?.map((redirect: string, index: number) => (
+              <Text key={index} style={styles.modalText}>{redirect}</Text>
+            ))}
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsRedirectModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* WebView Modal */}
       <Modal

@@ -59,7 +59,7 @@ const QRScannerScreen: React.FC = () => {
       const { uri } = result.assets[0];
       try {
         // If using expo-camera or similar packages:
-        const scannedResult = await scanQRCodeFromURL(uri); // Function to scan QR code from the selected image URL
+        const scannedResult = await scanQRCodeFromImage(uri); // Function to scan QR code from the selected image URL
         if (scannedResult) {
           handlePayload(scannedResult);
         } else {
@@ -71,7 +71,7 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
-  const scanQRCodeFromURL = async (uri: string) => {
+  const scanQRCodeFromImage = async (uri: string) => {
     // This method can vary depending on the package used for scanning
     // For example, using expo-camera or other available options to scan QR code from an image URL
     // Implement scanFromURLAsync if using expo-camera
