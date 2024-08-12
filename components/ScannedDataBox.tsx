@@ -332,9 +332,12 @@ const { text: encryptionText, icon: encryptionIcon } = getEncryptionStatus(encry
 
 
 
-{type === 'TEL' && (
+{type === 'PHONE' && (
   <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+    <View style={styles.dividerHorizontal} />
     <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />
+    {/* Divider */}
+
     <Text style={styles.iconText}>Call Number</Text>
   </TouchableOpacity>
 )}
@@ -347,14 +350,20 @@ const { text: encryptionText, icon: encryptionIcon } = getEncryptionStatus(encry
       Linking.openURL(smsUrl).catch(err => console.error('Error sending SMS:', err));
     }}
   >
+        {/* Divider */}
+<View style={styles.dividerHorizontal} />
     <Ionicons name="chatbubble-outline" size={screenWidth * 0.045} color="#2196F3" />
+
     <Text style={styles.iconText}>Send SMS</Text>
   </TouchableOpacity>
 )}
 
 {type === 'EMAIL' && (
   <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+    {/* Divider */}
+<View style={styles.dividerHorizontal} />
     <Ionicons name="mail-outline" size={screenWidth * 0.045} color="#2196F3" />
+    
     <Text style={styles.iconText}>Send Email</Text>
   </TouchableOpacity>
 )}

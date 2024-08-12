@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, Animated, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert, Animated, Dimensions, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getEmails, getScannedEmails, getUserInfo } from '../api/qrCodeAPI';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { Buffer } from 'buffer';
+import ScannedDataBox from '../components/ScannedDataBox';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -16,7 +17,9 @@ const EmailScreen: React.FC = () => {
   const [error, setError] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [bannerOpacity] = useState(new Animated.Value(0));
-  
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedQrCodeId, setSelectedQrCodeId] = useState(null);
+
   useEffect(() => {
     fetchUserEmail();
   }, []);
@@ -26,7 +29,7 @@ const EmailScreen: React.FC = () => {
     try {
       console.log('fetchUserEmail triggered');
       const userInfo = await getUserInfo();
-      setUserEmail(userInfo.email); 
+      setUserEmail(userInfo.email);
     } catch (error) {
       console.error('Error fetching user email:', error);
       setUserEmail('Error fetching email');
@@ -42,15 +45,15 @@ const EmailScreen: React.FC = () => {
       // Fetch the current authentication session
       const { tokens } = await fetchAuthSession();
       const idToken = tokens.idToken.toString();
-      
+
       const parts = idToken.split('.');
       const payload = parts[1];
       const decodedPayload = Buffer.from(payload, 'base64').toString('utf8');
       const parsedPayload = JSON.parse(decodedPayload);
-      
+
       const googleAccessToken = parsedPayload["custom:access_token"];
       const googleRefreshToken = parsedPayload["custom:refresh_token"];
-      
+
       if (googleAccessToken && googleRefreshToken) {
         // Use the fetched tokens to initiate email fetching
         await getEmails(googleAccessToken, googleRefreshToken);
@@ -128,6 +131,12 @@ const EmailScreen: React.FC = () => {
     }, [startPollingForScannedEmails])
   );
 
+  const handleUrlClick = (id) => {
+    console.log('handleURLClik ID :',)
+    setSelectedQrCodeId(id);
+    setIsModalVisible(true);
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -163,45 +172,48 @@ const EmailScreen: React.FC = () => {
                 <Text style={styles.date}>{item.date}</Text>
                 {selectedMessage === item && (
                   <View style={styles.emailListContainer}>
-                    {item.qrCodeByContentId && (
-                      <View>
-                        <Text style={styles.qrCodeHeader}>QR Codes by Content ID:</Text>
-                        {item.qrCodeByContentId.map((qrCode, index) => (
-                          <View key={index} style={styles.qrCodeContainer}>
-                            {qrCode.decodedContent.map((url, i) => (
-                              <TouchableOpacity key={i} onPress={() => Alert.alert("Testing")}>
-                                <Text style={styles.qrCodeLink}>{url}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        ))}
+                    <Text style={styles.qrCodeHeader}>Decoded QR Codes:</Text>
+                    {item.decodedContentsDetails?.map((details, index) => (
+                      <View key={index} style={styles.qrCodeContainer}>
+                        <TouchableOpacity onPress={() => handleUrlClick(details.data.id)}>
+                          <Text style={styles.qrCodeLink}>{details.data.contents}</Text>
+                        </TouchableOpacity>
                       </View>
-                    )}
-                    {item.qrCodeByURL && (
-                      <View>
-                        <Text style={styles.qrCodeHeader}>Decoded QR Codes:</Text>
-                        {item.qrCodeByURL.map((qrCode, index) => (
-                          <View key={index} style={styles.qrCodeContainer}>
-                            {qrCode.decodedContent.map((url, i) => (
-                              <TouchableOpacity key={i} onPress={() => Alert.alert("Testing")}>
-                                <Text style={styles.qrCodeLink}>{url}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        ))}
-                      </View>
-                    )}
+                    ))}
                   </View>
                 )}
               </TouchableOpacity>
             )}
           />
+
         </>
       )}
       <Animated.View style={[styles.banner, { opacity: bannerOpacity }]}>
         <Text style={styles.bannerText}>Scanning emails in the background. This may take a while...</Text>
       </Animated.View>
+
+      {/* Modal for ScannedDataBox */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        {/* The greyspace outside , made clickable to close the modl */}
+        <TouchableOpacity
+          style={styles.modalContainer}
+          activeOpacity={1}
+          onPressOut={() => setIsModalVisible(false)}
+        >
+          {/* Ensure ScannedDataBox does not render another modal */}
+          <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={() => setIsModalVisible(false)} />
+
+        </TouchableOpacity>
+      </Modal>
+
+
     </View>
+
   );
 };
 
@@ -312,6 +324,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: screenWidth * 0.04,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // dark overlay
+  },
+  innerModalContainer: {
+    backgroundColor: '#ffe6f0', // pink box color
+    padding: screenWidth * 0.05,
+    borderRadius: screenWidth * 0.03,
+    alignItems: 'center',
+  },
+  modalCloseButton: {
+    position: 'absolute',
+    top: screenWidth * 0.02,
+    right: screenWidth * 0.02,
+    zIndex: 1, // Ensure it is above other content
+  }
 });
 
 export default EmailScreen;
