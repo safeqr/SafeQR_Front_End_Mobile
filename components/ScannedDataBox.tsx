@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Linking, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Clipboard, Platform } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { getQRCodeDetails } from '../api/qrCodeAPI';
 import SecureWebView from '../components/SecureWebView';
+import { startActivityAsync, ActivityAction } from 'expo-intent-launcher';
+import * as Linking from 'expo-linking';
+
+
+
 
 
 
@@ -159,12 +164,6 @@ const getEncryptionStatus = (encryption) => {
 const { text: encryptionText, icon: encryptionIcon } = getEncryptionStatus(encryption);
 
 
-// Function to handle the connect to WiFi action
-const handleConnectToWifi = (wifiContent) => {
-  Linking.openURL(wifiContent).catch(err => console.error('Error connecting to WiFi:', err));
-};
-
-
   // Function to open the Wi-Fi configuration in the OS
   const handleOpenUrl = (url: string) => {
     Linking.openURL(url).catch(err => console.error('Error opening URL:', err));
@@ -175,16 +174,23 @@ const handleConnectToWifi = (wifiContent) => {
     Clipboard.setString(contents);
   };
 
-  // Function to send SMS
-  const handleSendSMS = () => {
-    const smsUrl = `sms:${contents}`;
-    Linking.openURL(smsUrl).catch(err => console.error('Error sending SMS:', err));
-  };
-
-  // Function to make a phone call
-  const handleMakeCall = () => {
-    const telUrl = `tel:${contents}`;
-    Linking.openURL(telUrl).catch(err => console.error('Error making call:', err));
+  const constructSMSUrl = (contents) => {
+    // Split the contents and extract the phone number and message
+    const [phone, ...messageParts] = contents.split(':').slice(1);
+    const message = messageParts.join(':');
+  
+    // Log the extracted phone number and message
+    console.log('Phone:', phone);
+    console.log('Message:', message);
+  
+    // Construct the SMS URL based on the platform
+    if (Platform.OS === 'android') {
+      return `sms:${phone}?body=${message}`;
+    } else if (Platform.OS === 'ios') {
+      return `sms:${phone};body=${message}`;
+    } else {
+      return `sms:${phone}`; // Fallback if platform is unknown
+    }
   };
 
   return (
@@ -309,11 +315,16 @@ const handleConnectToWifi = (wifiContent) => {
     {/* Divider */}
     <View style={styles.dividerHorizontal} />
 
-    {/* Connect to WiFi Button */}
-    <TouchableOpacity style={styles.connectButton} onPress={() => handleConnectToWifi(contents)}>
-      <Ionicons name="wifi-outline" size={screenWidth * 0.045} color="#fff" />
-      <Text style={styles.connectButtonText}>Connect to WiFi</Text>
-    </TouchableOpacity>
+   {/* Connect to Wi-Fi Button */}
+   <TouchableOpacity
+  style={[styles.connectButton, { backgroundColor: resultColor }]}
+  onPress={() => {
+    startActivityAsync(ActivityAction.WIFI_SETTINGS)
+      .catch(err => console.error('Error opening Wi-Fi settings:', err));
+  }}
+>
+  <Text style={styles.connectButtonText}>Connect to Wi-Fi</Text>
+</TouchableOpacity>
   </>
 )}
 
@@ -321,35 +332,34 @@ const handleConnectToWifi = (wifiContent) => {
 
 
 
-      {/* TEXT Type */}
-      {type === 'TEXT' && (
-        <View style={styles.iconContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleCopyToClipboard}>
-            <Ionicons name="clipboard-outline" size={screenWidth * 0.045} color="#2196F3" />
-            <Text style={styles.iconText}>Copy</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+{type === 'TEL' && (
+  <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+    <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />
+    <Text style={styles.iconText}>Call Number</Text>
+  </TouchableOpacity>
+)}
 
-      {/* SMS Type */}
-      {type === 'SMS' && (
-        <View style={styles.iconContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleSendSMS}>
-            <Ionicons name="chatbubble-outline" size={screenWidth * 0.045} color="#2196F3" />
-            <Text style={styles.iconText}>Send SMS</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+{type === 'SMS' && (
+  <TouchableOpacity
+    style={styles.iconButton}
+    onPress={() => {
+      const smsUrl = constructSMSUrl(contents);
+      Linking.openURL(smsUrl).catch(err => console.error('Error sending SMS:', err));
+    }}
+  >
+    <Ionicons name="chatbubble-outline" size={screenWidth * 0.045} color="#2196F3" />
+    <Text style={styles.iconText}>Send SMS</Text>
+  </TouchableOpacity>
+)}
 
-      {/* TEL Type */}
-      {type === 'TEL' && (
-        <View style={styles.iconContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleMakeCall}>
-            <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />
-            <Text style={styles.iconText}>Call</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+{type === 'EMAIL' && (
+  <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+    <Ionicons name="mail-outline" size={screenWidth * 0.045} color="#2196F3" />
+    <Text style={styles.iconText}>Send Email</Text>
+  </TouchableOpacity>
+)}
+
+
 
       {/* Full Content Modal */}
       <Modal
