@@ -20,6 +20,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState('');
 
+
   useEffect(() => {
     const fetchQRDetails = async () => {
       try {
@@ -53,30 +54,63 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const encryption = details.encryption || 'NO';
   const hidden = details.hidden ? 'Hidden' : 'Visible';
 
-  // Determine the result text based on the security status
-  const getResultText = () => {
-    if (result === 'UNSAFE') {
-      return 'DANGEROUS';
-    } else if (result === 'SAFE') {
-      return 'SAFE';
-    } else {
-      return 'WARNING';
-    }
-  };
 
-  // Get color corresponding to the result text
-  const getResultColor = () => {
-    const resultText = getResultText();
-    if (resultText === 'DANGEROUS') {
-      return '#ff0000'; // Red
-    } else if (resultText === 'WARNING') {
-      return '#ffa500'; // Orange
-    } else if (resultText === 'SAFE') {
-      return '#44c167'; // Green
-    } else {
-      return '#000000'; // Black for unknown
-    }
-  };
+
+// Function to get security text and icon based on the URL description
+const getSecurityStatus = () => {
+  if (data.info?.description === "Secure Uniform Resource Locator") {
+    return {
+      text: 'Secure Connection',
+      icon: <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
+    };
+  } else {
+    return {
+      text: 'Not Secure',
+      icon: <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff0000" />
+    };
+  }
+};
+const { text: securityText, icon: securityIcon } = getSecurityStatus();
+
+
+
+
+ // Function to get result text and color based on the security status 
+const getResultStatus = () => {
+  if (result === 'UNSAFE') {
+    return { text: 'DANGEROUS', color: '#ff0000' }; // Red
+  } else if (result === 'SAFE') {
+    return { text: 'SAFE', color: '#44c167' }; // Green
+  } else if (result === 'WARNING') {
+    return { text: 'WARNING', color: '#ffa500' }; // Orange
+  } else if (result === '') {
+    return { text: 'UNKNOWN', color: '#000000' }; // Black for unknown
+  } else {
+    return { text: 'UNKNOWN', color: '#000000' }; // Default to Black for unknown
+  }
+};
+const { text: resultText, color: resultColor } = getResultStatus();
+
+
+
+
+// Function to determine security header status
+const getSecurityHeaderStatus = (headers) => {
+  const filteredHeaders = headers.filter(
+    (header) => header !== "Not an HTTPS connection" && header !== "No HSTS Header detected"
+  );
+
+  if (filteredHeaders.length > 0) {
+    return { text: 'Security Headers', color: '#44c167', hasHeaders: true }; // Green with headers
+  } else {
+    return { text: 'No Security Headers', color: '#ffa500', hasHeaders: false }; // Orange without headers
+  }
+};
+
+const securityHeaderStatus = getSecurityHeaderStatus(details.hstsHeader || []);
+
+
+
 
   // Truncate content string to specified length
   const truncateContent = (content: string, length: number) => {
@@ -135,57 +169,68 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       </View>
 
       {/* The Main Result in appropriate color */}
-      <Text style={[styles.resultText, { color: getResultColor() }]}>
-        Result: {getResultText()}
-      </Text>
+      <Text style={[styles.resultText, { color: resultColor }]}>
+  Result: {resultText}
+</Text>
+
 
       {/* URL Type */}
-      {type === 'URL' && (
-        <>
-          <View style={styles.displayCheck}>
-            {details.redirectChain?.length === 0 ? (
-              <>
-                <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
-                <Text style={styles.moreInfoButtonText}>No Redirects</Text>
-              </>
-            ) : (
-              <>
-                <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff0000" />
-                <Text style={styles.moreInfoButtonText}>Redirects</Text>
-              </>
-            )}
-          </View>
+{type === 'URL' && (
+  <>
+    <View style={styles.displayCheck}>
+  {securityIcon}
+  <Text style={styles.moreInfoButtonText}>{securityText}</Text>
+</View>
 
-          {/* Security Headers Button */}
-          {details.securityHeaders?.length > 0 ? (
-            <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
-              <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
-              <Text style={styles.moreInfoButtonText}>Security Headers</Text>
-              <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.displayCheck}>
-              <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color="#ffa500" />
-              <Text style={styles.moreInfoButtonText}>No Security Headers</Text>
-            </View>
-          )}
+    {/* Security Headers Button */}
+    {securityHeaderStatus.hasHeaders ? (
+      <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
+        <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
+        <Text style={styles.moreInfoButtonText}>{securityHeaderStatus.text}</Text>
+        <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
+      </TouchableOpacity>
+    ) : (
+      <View style={styles.displayCheck}>
+        <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
+        <Text style={styles.moreInfoButtonText}>{securityHeaderStatus.text}</Text>
+      </View>
+    )}
 
-          {/* Redirects Button */}
-          <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-            <Ionicons name="shield" size={screenWidth * 0.045} color="#ffa500" />
-            <Text style={styles.moreInfoButtonText}>Redirects</Text>
-            <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" />
-          </TouchableOpacity>
+    {/* Redirects Button */}
+    <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+      <Ionicons name="shield" size={screenWidth * 0.045} color={details.redirectChain?.length > 1 ? "#ff0000" : "#44c167"} />
+      <Text style={styles.moreInfoButtonText}>Redirects</Text>
+      <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
+    </TouchableOpacity>
 
-          {/* URL Open Button */}
-          <View style={styles.iconContainer}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => handleOpenUrl(contents)}>
-              <Ionicons name="open" size={screenWidth * 0.045} color="#2196F3" />
-              <Text style={styles.iconText}>Open</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
+{/* Divider */}
+<View style={styles.dividerHorizontal} />
+
+{/* Action Buttons */}
+<View style={styles.iconContainer}>
+  <TouchableOpacity style={styles.iconButton} onPress={handleCopyToClipboard}>
+    <Ionicons name="clipboard-outline" size={screenWidth * 0.05} color="#2196F3" />
+    <Text style={styles.iconText}>Copy Link</Text>
+  </TouchableOpacity>
+  
+  <TouchableOpacity style={styles.iconButton} onPress={() => handleOpenUrl(contents)}>
+    <Ionicons name="open-outline" size={screenWidth * 0.05} color="#2196F3" />
+    <Text style={styles.iconText}>Open Link</Text>
+  </TouchableOpacity>
+  
+  <TouchableOpacity style={styles.iconButton} onPress={() => {
+        setWebViewUrl(contents);
+        setIsWebViewVisible(true);
+      }}>
+    <MaterialCommunityIcons name="file-lock-outline" size={screenWidth * 0.05} color="#2196F3" />
+    <Text style={styles.iconText}>SecureWebView</Text>
+  </TouchableOpacity>
+</View>
+
+  </>
+)}
+
+
 
       {/* WIFI Type */}
       {type === 'WIFI' && (
@@ -246,25 +291,31 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </Modal>
 
-      {/* Security Headers Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Security Headers</Text>
-            {details.securityHeaders?.map((header: string, index: number) => (
-              <Text key={index} style={styles.modalText}>{header}</Text>
-            ))}
-            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
-              <Text style={styles.closeModalButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+
+
+
+{/*POP UP Security Header and Redirect button*/}
+     {/* Security Headers Modal */}
+<Modal
+  visible={isModalVisible}
+  transparent={true}
+  animationType="fade"
+  onRequestClose={() => setIsModalVisible(false)}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Security Headers</Text>
+      <ScrollView style={styles.modalScrollContent}>
+        {details.hstsHeader?.map((header: string, index: number) => (
+          <Text key={index} style={styles.modalText}>{header}</Text>
+        ))}
+      </ScrollView>
+      <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsModalVisible(false)}>
+        <Text style={styles.closeModalButtonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
 
       {/* Redirect Chain Modal */}
       <Modal
@@ -373,20 +424,30 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     marginTop: screenWidth * 0.01875,
   },
   iconButton: {
     flexDirection: 'column',
     alignItems: 'center',
-    flex: 1,
+    marginHorizontal: screenWidth * 0.05, // Add margin between buttons
   },
   iconText: {
     color: '#2196F3',
-    marginTop: screenWidth * 0.009375,
+    marginTop: screenWidth * 0.01,
     textAlign: 'center',
     fontSize: screenWidth * 0.03,
   },
+  
+  dividerHorizontal: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#ddd',
+    marginVertical: screenWidth * 0.025,
+  },
+  
+  
   moreInfoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -447,6 +508,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff69b4',
     borderRadius: screenWidth * 0.009375,
   },
+  chevronIcon: {
+    marginLeft: 'auto',
+  },
+  
   closeModalButtonText: {
     fontSize: screenWidth * 0.03,
     color: '#fff',
@@ -469,6 +534,8 @@ const styles = StyleSheet.create({
     shadowRadius: screenWidth * 0.01875,
     elevation: screenWidth * 0.0135,
   },
+
+  
 });
 
 export default ScannedDataBox;
