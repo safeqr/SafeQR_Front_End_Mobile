@@ -5,6 +5,9 @@ import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-
 import { getQRCodeDetails } from '../api/qrCodeAPI';
 import SecureWebView from '../components/SecureWebView';
 
+
+
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface ScannedDataBoxProps {
@@ -106,9 +109,16 @@ const getSecurityHeaderStatus = (headers) => {
     return { text: 'No Security Headers', color: '#ffa500', hasHeaders: false }; // Orange without headers
   }
 };
-
 const securityHeaderStatus = getSecurityHeaderStatus(details.hstsHeader || []);
 
+const getRedirectStatus = (redirectCount: number) => {
+  if (redirectCount === 0) {
+    return { text: 'No Redirects', color: '#44c167', hasRedirects: false }; // Green with no redirects
+  } else {
+    return { text: 'Redirects', color: '#ff0000', hasRedirects: true }; // Red with redirects
+  }
+};
+const redirectStatus = getRedirectStatus(details.redirect || 0);
 
 
 
@@ -231,12 +241,20 @@ const handleConnectToWifi = (wifiContent) => {
       </View>
     )}
 
-    {/* Redirects Button */}
-    <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-      <Ionicons name="shield" size={screenWidth * 0.045} color={details.redirectChain?.length > 1 ? "#ff0000" : "#44c167"} />
-      <Text style={styles.DetailsInfo}>Redirects</Text>
-      <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
-    </TouchableOpacity>
+{/* Redirects Button */}
+{redirectStatus.hasRedirects ? (
+  <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+    <Ionicons name="shield" size={screenWidth * 0.045} color={redirectStatus.color} />
+    <Text style={styles.DetailsInfo}>{redirectStatus.text}</Text>
+    <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
+  </TouchableOpacity>
+) : (
+  <View style={styles.displayCheck}>
+    <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={redirectStatus.color} />
+    <Text style={styles.DetailsInfo}>{redirectStatus.text}</Text>
+  </View>
+)}
+
 
 {/* Divider */}
 <View style={styles.dividerHorizontal} />
