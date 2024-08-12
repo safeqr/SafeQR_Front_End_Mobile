@@ -78,7 +78,7 @@ const { text: securityText, icon: securityIcon } = getSecurityStatus();
  // Function to get result text and color based on the security status 
 const getResultStatus = () => {
   if (result === 'UNSAFE') {
-    return { text: 'DANGEROUS', color: '#ff0000' }; // Red
+    return { text: 'UNSAFE', color: '#ff0000' }; // Red
   } else if (result === 'SAFE') {
     return { text: 'SAFE', color: '#44c167' }; // Green
   } else if (result === 'WARNING') {
@@ -119,6 +119,41 @@ const securityHeaderStatus = getSecurityHeaderStatus(details.hstsHeader || []);
     }
     return content;
   };
+
+
+// Function to get encryption status and icon
+const getEncryptionStatus = (encryption) => {
+  if (encryption === 'NO') {
+    return {
+      text: 'No Encryption',
+      icon: <Ionicons name="shield" size={screenWidth * 0.045} color="#ff0000" /> // Red
+    };
+  } else if (encryption === 'WEP') {
+    return {
+      text: 'WEP Encryption',
+      icon: <Ionicons name="shield" size={screenWidth * 0.045} color="#ffa500" /> // Orange
+    };
+  } else if (encryption === 'WPA' || encryption === 'WPA2') {
+    return {
+      text: 'WPA Encryption',
+      icon: <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" /> // Green
+    };
+  } else {
+    return {
+      text: 'Unknown Encryption',
+      icon: <Ionicons name="shield" size={screenWidth * 0.045} color="#000000" /> // Black for unknown
+    };
+  }
+};
+
+const { text: encryptionText, icon: encryptionIcon } = getEncryptionStatus(encryption);
+
+
+// Function to handle the connect to WiFi action
+const handleConnectToWifi = (wifiContent) => {
+  Linking.openURL(wifiContent).catch(err => console.error('Error connecting to WiFi:', err));
+};
+
 
   // Function to open the Wi-Fi configuration in the OS
   const handleOpenUrl = (url: string) => {
@@ -179,27 +214,27 @@ const securityHeaderStatus = getSecurityHeaderStatus(details.hstsHeader || []);
   <>
     <View style={styles.displayCheck}>
   {securityIcon}
-  <Text style={styles.moreInfoButtonText}>{securityText}</Text>
+  <Text style={styles.DetailsInfo}>{securityText}</Text>
 </View>
 
     {/* Security Headers Button */}
     {securityHeaderStatus.hasHeaders ? (
-      <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsModalVisible(true)}>
+      <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsModalVisible(true)}>
         <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
-        <Text style={styles.moreInfoButtonText}>{securityHeaderStatus.text}</Text>
+        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
         <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
       </TouchableOpacity>
     ) : (
       <View style={styles.displayCheck}>
         <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
-        <Text style={styles.moreInfoButtonText}>{securityHeaderStatus.text}</Text>
+        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
       </View>
     )}
 
     {/* Redirects Button */}
-    <TouchableOpacity style={styles.moreInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+    <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
       <Ionicons name="shield" size={screenWidth * 0.045} color={details.redirectChain?.length > 1 ? "#ff0000" : "#44c167"} />
-      <Text style={styles.moreInfoButtonText}>Redirects</Text>
+      <Text style={styles.DetailsInfo}>Redirects</Text>
       <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
     </TouchableOpacity>
 
@@ -233,13 +268,40 @@ const securityHeaderStatus = getSecurityHeaderStatus(details.hstsHeader || []);
 
 
       {/* WIFI Type */}
+      
       {type === 'WIFI' && (
-        <>
-          <Text style={styles.moreInfoButton}>SSID: {ssid}</Text>
-          <Text style={styles.moreInfoButton}>Encryption: {encryption}</Text>
-          <Text style={styles.moreInfoButton}>Visibility: {hidden === 'Hidden' ? '✔️' : '❌'}</Text>
-        </>
-      )}
+  <>
+    {/* SSID */}
+    <View style={styles.displayCheck}>
+      <Text style={styles.DetailsInfo}>SSID: {ssid}</Text>
+    </View>
+
+    {/* Encryption */}
+    <View style={styles.displayCheck}>
+      {encryptionIcon}
+      <Text style={styles.DetailsInfo}>{encryptionText}</Text>
+    </View>
+
+    {/* Visibility */}
+    <View style={styles.displayCheck}>
+      <Ionicons name={hidden === 'Hidden' ? "eye-off-outline" : "eye-outline"} size={screenWidth * 0.045} color={hidden === 'Hidden' ? "#ff0000" : "#44c167"} />
+      <Text style={styles.DetailsInfo}>Visibility: {hidden === 'Hidden' ? 'Hidden' : 'Visible'}</Text>
+    </View>
+
+    {/* Divider */}
+    <View style={styles.dividerHorizontal} />
+
+    {/* Connect to WiFi Button */}
+    <TouchableOpacity style={styles.connectButton} onPress={() => handleConnectToWifi(contents)}>
+      <Ionicons name="wifi-outline" size={screenWidth * 0.045} color="#fff" />
+      <Text style={styles.connectButtonText}>Connect to WiFi</Text>
+    </TouchableOpacity>
+  </>
+)}
+
+
+
+
 
       {/* TEXT Type */}
       {type === 'TEXT' && (
@@ -417,7 +479,7 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: screenWidth * 0.01875,
   },
-  moreInfoButtonText: {
+  DetailsInfo: {
     fontSize: screenWidth * 0.03,
     color: '#000',
     marginLeft: screenWidth * 0.01875,
@@ -448,7 +510,7 @@ const styles = StyleSheet.create({
   },
   
   
-  moreInfoButton: {
+  DetailsInfoButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: screenWidth * 0.01875,
@@ -534,6 +596,23 @@ const styles = StyleSheet.create({
     shadowRadius: screenWidth * 0.01875,
     elevation: screenWidth * 0.0135,
   },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: screenWidth * 0.0375,
+    paddingHorizontal: screenWidth * 0.0375,
+    backgroundColor: '#44c167', // Green background for the button
+    borderRadius: screenWidth * 0.01875,
+    marginTop: screenWidth * 0.025,
+  },
+  
+  connectButtonText: {
+    color: '#fff',
+    marginLeft: screenWidth * 0.01875,
+    fontSize: screenWidth * 0.0375,
+  },
+  
 
   
 });
