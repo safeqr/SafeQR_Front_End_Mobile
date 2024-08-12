@@ -149,10 +149,10 @@ const SettingsScreen: React.FC = () => {
         <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/')}>
           <Text style={styles.linkText}>safeqr.github.io/marketing</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/privacy-policy')}>
+        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/#/privacy-policy')}>
           <Text style={styles.linkText}>Privacy Policy</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/terms-of-service')}>
+        <TouchableOpacity onPress={() => handleLinkPress('https://safeqr.github.io/marketing/#/terms-of-service')}>
           <Text style={styles.linkText}>Terms Of Service</Text>
         </TouchableOpacity>
       </View>
