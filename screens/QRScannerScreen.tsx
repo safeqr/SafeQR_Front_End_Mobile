@@ -3,16 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Modal } fr
 import { Camera, useCameraDevice, useCameraPermission, useCodeScanner } from 'react-native-vision-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import RNQRGenerator from 'rn-qr-generator';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { scanQRCode } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
-import {scanFromURLAsync } from 'expo-camera';
-
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-
-
 
 const QRScannerScreen: React.FC = () => {
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
@@ -64,15 +60,20 @@ const QRScannerScreen: React.FC = () => {
 
     if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // Ensure the uri is not empty 
       try {
-        const scannedResult = await scanFromURLAsync(result.assets[0].uri);
-        if (scannedResult && scannedResult[0] && scannedResult[0].data) {
-          handlePayload(scannedResult[0].data);
-          console.log('QR code data from image:', scannedResult[0].data);
+        const detectionResult = await RNQRGenerator.detect({
+          uri: result.assets[0].uri, // Local path of the image
+        });
+
+        const { values } = detectionResult;
+
+        if (values.length > 0) {
+          handlePayload(values[0]); // Use the first detected QR code value
+          console.log('QR code data from image:', values[0]);
         } else {
           console.log("No QR code found in the selected image");
         }
       } catch (error) {
-      console.error('Error scanning QR code from image:', error);
+        console.error('Error scanning QR code from image:', error);
       }
     }
   };
