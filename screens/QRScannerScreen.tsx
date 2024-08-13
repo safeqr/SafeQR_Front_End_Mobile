@@ -6,8 +6,13 @@ import * as ImagePicker from 'expo-image-picker';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { scanQRCode } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
+import {scanFromURLAsync } from 'expo-camera';
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+
+
 
 const QRScannerScreen: React.FC = () => {
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
@@ -42,48 +47,34 @@ const QRScannerScreen: React.FC = () => {
   const codeScanner = useCodeScanner({
     codeTypes: ['qr'], // Only scan QR codes
     onCodeScanned: (codes) => {
-      if (!scanned) {
-        handlePayload(codes[0]?.value); // Extract and handle the value only
+      if (!scanned && codes[0]?.value) {
+        handlePayload(codes[0].value); // Extract and handle the value only if it exists
       }
     }
   });
 
-  const openImagePicker = async () => {
+  const readQRFromImage = async () => {
+    console.log("Reading QR code from image");
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
+      allowsEditing: false, // Don't ask user to crop images
       quality: 1,
     });
 
-    if (!result.canceled && result.assets.length > 0) {
-      const { uri } = result.assets[0];
+    if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // Ensure the uri is not empty 
       try {
-        // If using expo-camera or similar packages:
-        const scannedResult = await scanQRCodeFromImage(uri); // Function to scan QR code from the selected image URL
-        if (scannedResult) {
-          handlePayload(scannedResult);
+        const scannedResult = await scanFromURLAsync(result.assets[0].uri);
+        if (scannedResult && scannedResult[0] && scannedResult[0].data) {
+          handlePayload(scannedResult[0].data);
+          console.log('QR code data from image:', scannedResult[0].data);
         } else {
           console.log("No QR code found in the selected image");
         }
       } catch (error) {
-        console.error('Error scanning QR code from image:', error);
+      console.error('Error scanning QR code from image:', error);
       }
     }
-  };
-
-  const scanQRCodeFromImage = async (uri: string) => {
-    // This method can vary depending on the package used for scanning
-    // For example, using expo-camera or other available options to scan QR code from an image URL
-    // Implement scanFromURLAsync if using expo-camera
-
-    // If using expo-camera
-    // const scannedResult = await scanFromURLAsync(uri);
-    // return scannedResult?.[0]?.data;
-
-    // If using other methods, implement them accordingly
-    // Here we simulate scanning with a placeholder result
-    const placeholderResult = "SIMULATED_PAYLOAD"; // Replace with actual scanning logic
-    return placeholderResult;
   };
 
   if (!hasPermission) {
@@ -125,7 +116,7 @@ const QRScannerScreen: React.FC = () => {
         </TouchableOpacity>
 
         {/* Gallery Button */}
-        <TouchableOpacity onPress={openImagePicker} style={styles.galleryButton}>
+        <TouchableOpacity onPress={readQRFromImage} style={styles.galleryButton}>
           <Ionicons name="image" size={screenWidth * 0.06} color="#fff" />
         </TouchableOpacity>
       </View>
