@@ -188,9 +188,10 @@ const EmailScreen: React.FC = () => {
 
         </>
       )}
-      <Animated.View style={[styles.banner, { opacity: bannerOpacity }]}>
+      <Animated.View style={[styles.banner, { opacity: bannerOpacity }]} pointerEvents="none">
         <Text style={styles.bannerText}>Scanning emails in the background. This may take a while...</Text>
       </Animated.View>
+
 
       {/* Modal for ScannedDataBox */}
       <Modal
