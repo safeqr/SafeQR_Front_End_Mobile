@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   scannedDataBoxPopup: {
     position: 'absolute',
-    top: '30%', 
+    top: '20%', 
     left: '5%',
     right: '5%',
     zIndex: 2,
