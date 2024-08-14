@@ -158,7 +158,7 @@ const QRScannerScreen: React.FC = () => {
           <Camera
             style={StyleSheet.absoluteFill}
             device={device}
-            isActive={true}
+            isActive={!isSettingsModalVisible} // Disable the camera when settings modal is open
             torch={enableTorch ? 'on' : 'off'}
             codeScanner={codeScanner}
           />
@@ -252,17 +252,22 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: 15,
     marginVertical: 10,
     color: 'black',
   },
   cameraContainer: {
-    height: '50%',
+    width: '100%', // Adjust the width as needed
+    height: '45%', // Adjust the height as needed
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
     overflow: 'hidden',
+    alignSelf: 'center', // Center the container horizontally
+    marginTop: '10%', // Adjust the top margin to position it vertically in the middle
   },
+  
+  
   settingsButton: {
     position: 'absolute',
     top: screenHeight * 0.05,
@@ -307,15 +312,15 @@ const styles = StyleSheet.create({
   settingsModalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: '#f8f0fc', // Full pink background to match the app's theme
   },
+  
   settingsModalContent: {
-    width: '100%',
-    height: '80%',
-    backgroundColor: 'white',
+    flex: 1,
+    backgroundColor: '#f8f0fc', // Full pink background for the content as well
     padding: screenWidth * 0.05,
-    borderTopLeftRadius: screenWidth * 0.025,
-    borderTopRightRadius: screenWidth * 0.025,
+    borderTopLeftRadius: 0, // Remove border radius to avoid white edges
+    borderTopRightRadius: 0, // Remove border radius to avoid white edges
     alignItems: 'center',
   },
   closeButton: {

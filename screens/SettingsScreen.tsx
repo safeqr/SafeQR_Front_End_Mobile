@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Button } from 'react-native';
 import { useAuthenticator } from '@aws-amplify/ui-react-native';
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
-import { fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
-import { deleteAllScannedHistories } from '../api/qrCodeAPI'; // Import the API function
+import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { deleteAllScannedHistories, getUserInfo } from '../api/qrCodeAPI'; // Import the API function
 import { Buffer } from 'buffer';
+import { Ionicons } from '@expo/vector-icons';
 
 function SignOutButton() {
   const { signOut } = useAuthenticator();
@@ -22,6 +23,17 @@ const handleSignInWithRedirect = async () => {
 const SettingsScreen: React.FC = () => {
   const { userAttributes } = useFetchUserAttributes();
   const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  const fetchUserEmail = async () => {
+    try {
+      console.log('fetchUserEmail triggered');
+      const userInfo = await getUserInfo();
+      setUserEmail(userInfo.email); // Assuming userInfo has an email property
+    } catch (error) {
+      console.error('Error fetching user email:', error);
+    }
+  };
 
   useEffect(() => {
     const getGoogleAccessToken = async () => {
@@ -95,6 +107,10 @@ const SettingsScreen: React.FC = () => {
     }
   }, [userAttributes]);
 
+  useEffect(() => {
+    fetchUserEmail();
+  }, []);
+
   const handleLinkPress = (url: string) => {
     Linking.openURL(url);
   };
@@ -108,41 +124,70 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleSignOut = () => {
+    Alert.alert('Confirm Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', onPress: () => signOut() }
+    ]);
+  };
+
+  const handleDeleteAllEmails = () => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete all emails?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', onPress: () => console.log('Delete all emails') }
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Settings</Text>
-
+  
       {/* Profile Section */}
-          <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Profile</Text>
-      {userAttributes ? (
-        <View>
-          <Text style={styles.userName}>Hello, {userAttributes.name || 'Unknown User'}</Text>
-          {googleAccessToken && (
-            <Text>Google Access Token: {googleAccessToken.substring(0, 10)}...</Text>
-          )}
-          <SignOutButton />
+      <View style={styles.section}>
+        <View style={styles.profileContainer}>
+          <Ionicons name="person-circle" size={60} color="#f41c87" style={styles.profileIcon} />
+          <Text style={styles.userName}>Hello, {userAttributes?.name || 'Unknown User'}</Text>
         </View>
-      ) : (
-        <TouchableOpacity style={styles.loginButton} onPress={handleSignInWithRedirect}>
-          <Text style={styles.loginButtonText}>Log In</Text>
-        </TouchableOpacity>
-      )}
+        {userAttributes ? (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+            <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.logoutButtonText}>Log Out</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.loginButton} onPress={handleSignInWithRedirect}>
+            <Ionicons name="log-in-outline" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
+        )}
       </View>
-
-
+  
       <View style={styles.divider} />
-
+  
+      {/* Email Section */}
+      <View style={styles.section}>
+        <View style={styles.emailRow}>
+          <Text style={styles.sectionTitle}>Email: </Text>
+          <Text style={styles.userEmail}>{userEmail || 'Loading...'}</Text>
+        </View>
+        <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllEmails}>
+          <Ionicons name="trash-outline" size={24} color="#fff" style={styles.buttonIcon} />
+          <Text style={styles.deleteAllButtonText}>Delete All Email</Text>
+        </TouchableOpacity>
+      </View>
+  
+      <View style={styles.divider} />
+  
       {/* History & Bookmarks Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>History & Bookmarks</Text>
         <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllHistories}>
+          <Ionicons name="trash-outline" size={24} color="#fff" style={styles.buttonIcon} />
           <Text style={styles.deleteAllButtonText}>Delete All History</Text>
         </TouchableOpacity>
       </View>
-
+  
       <View style={styles.divider} />
-
+  
       {/* About Us Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About Us</Text>
@@ -156,7 +201,7 @@ const SettingsScreen: React.FC = () => {
           <Text style={styles.linkText}>Terms Of Service</Text>
         </TouchableOpacity>
       </View>
-
+  
       <Text style={styles.versionText}>Version 1.2</Text>
     </View>
   );
@@ -185,27 +230,60 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 10,
   },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffe6f0',
+    padding: 15,
+    borderRadius: 15,
+  },
+  profileIcon: {
+    marginRight: 15,
+  },
   userName: {
+    fontSize: 18,
+    color: '#f41c87',
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    backgroundColor: '#ff69b4',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    marginVertical: 10,
+    flexDirection: 'row',
+  },
+  logoutButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#000',
-    marginBottom: 10,
   },
   loginButton: {
+    flexDirection: 'row',
     backgroundColor: '#ff69b4',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 20,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',
   },
   loginButtonText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
+    marginLeft: 10,
+  },
+  userEmail: {
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 10,
   },
   deleteAllButton: {
-    backgroundColor: '#ff0000', // Red color
-    borderRadius: 25, // Round button
+    flexDirection: 'row',
+    backgroundColor: '#ff0000',
+    borderRadius: 25,
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -217,11 +295,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  buttonIcon: {
+    marginRight: 10,
   },
   divider: {
     height: 1,
     backgroundColor: '#ccc',
     marginVertical: 20,
+  },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center', // Align the text vertically in the center
+    marginBottom: 10, // Add some spacing below the row
   },
   linkText: {
     fontSize: 16,
@@ -234,7 +321,6 @@ const styles = StyleSheet.create({
     color: '#aaa',
     marginTop: 20,
   },
-  
 });
 
 export default SettingsScreen;
