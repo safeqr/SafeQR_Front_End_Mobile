@@ -253,3 +253,18 @@ export const getQRTips = async () => {
     throw error;
   }
 };
+
+
+// Function to delete all emails
+export const deleteAllEmails = async () => {
+  try {
+    const response = await apiRequest({
+      method: 'put',
+      url: `${API_BASE_URL}${API_URL_GMAIL_DELETE_ALL_MESSAGES}`,
+    });
+    return response; // Assuming the response contains the message
+  } catch (error) {
+    console.error('Error deleting all emails:', error);
+    throw error;
+  }
+};

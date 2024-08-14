@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Button } from
 import { useAuthenticator } from '@aws-amplify/ui-react-native';
 import useFetchUserAttributes from '../hooks/useFetchUserAttributes';
 import { fetchAuthSession, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
-import { deleteAllScannedHistories, getUserInfo } from '../api/qrCodeAPI'; // Import the API function
+import { deleteAllEmails, deleteAllScannedHistories, getUserInfo } from '../api/qrCodeAPI'; // Import the API function
 import { Buffer } from 'buffer';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -131,10 +131,20 @@ const SettingsScreen: React.FC = () => {
     ]);
   };
 
-  const handleDeleteAllEmails = () => {
+  const handleDeleteAllEmails = async () => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete all emails?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', onPress: () => console.log('Delete all emails') }
+      {
+        text: 'Delete',
+        onPress: async () => {
+          try {
+            const response = await deleteAllEmails();
+            Alert.alert('Success', response.message);
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete all emails. Please try again.');
+          }
+        }
+      }
     ]);
   };
 
@@ -282,7 +292,7 @@ const styles = StyleSheet.create({
   },
   deleteAllButton: {
     flexDirection: 'row',
-    backgroundColor: '#ff0000',
+    backgroundColor: '#ff5941',
     borderRadius: 25,
     paddingVertical: 10,
     paddingHorizontal: 20,
