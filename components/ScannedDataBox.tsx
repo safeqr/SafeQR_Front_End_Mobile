@@ -28,7 +28,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
 
 
 
-
   useEffect(() => {
     const fetchQRDetails = async () => {
       try {
@@ -85,6 +84,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const hidden = details.hidden ? 'Hidden' : 'Visible';
 
   const isShorteningService = details.shorteningService === 'Yes';
+  const classification = details.classifications || 'Unknown';
 
 
   // Function to get security text and icon based on the URL description
@@ -97,7 +97,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     } else {
       return {
         text: 'Not Secure',
-        icon: <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff0000" />
+        icon: <SimpleLineIcons name="shield" size={screenWidth * 0.045} color="#ff5942" />
       };
     }
   };
@@ -109,7 +109,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   // Function to get result text and color based on the security status 
   const getResultStatus = () => {
     if (result === 'UNSAFE') {
-      return { text: 'UNSAFE', color: '#ff0000' }; // Red
+      return { text: 'UNSAFE', color: '#ff5942' }; // Red
     } else if (result === 'SAFE') {
       return { text: 'SAFE', color: '#44c167' }; // Green
     } else if (result === 'WARNING') {
@@ -143,7 +143,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     if (redirectCount === 0) {
       return { text: 'No Redirects', color: '#44c167', hasRedirects: false }; // Green with no redirects
     } else {
-      return { text: 'Redirects', color: '#ff0000', hasRedirects: true }; // Red with redirects
+      return { text: 'Redirects', color: '#ff5942', hasRedirects: true }; // Red with redirects
     }
   };
   const redirectStatus = getRedirectStatus(details.redirect || 0);
@@ -164,7 +164,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     if (encryption === 'NO') {
       return {
         text: 'No Encryption',
-        icon: <Ionicons name="shield" size={screenWidth * 0.045} color="#ff0000" /> // Red
+        icon: <Ionicons name="shield" size={screenWidth * 0.045} color="#ff5942" /> // Red
       };
     } else if (encryption === 'WEP') {
       return {
@@ -224,7 +224,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     text: details.sslStripping?.some(status => status === true)
       ? "SSL Stripping Detected"
       : "No SSL Stripping",
-    color: details.sslStripping?.some(status => status === true) ? "#FF0000" : "#44c167", // Green for No SSL Stripping
+    color: details.sslStripping?.some(status => status === true) ? "#ff5942" : "#44c167", // Green for No SSL Stripping
   };
 
   // Log to check what's happening
@@ -234,7 +234,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const hasExecutableStatus = {
     hasExecutable: details.hasExecutable ?? false,
     text: details.hasExecutable ? "Executable Detected" : "No Executable",
-    color: details.hasExecutable ? "#FF0000" : "#44c167", // Green for No Executable
+    color: details.hasExecutable ? "#ff5942" : "#44c167", // Green for No Executable
   };
 
   // Log to check what's happening
@@ -244,7 +244,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const trackingStatus = {
     hasTracking: details.tracking ?? false,
     text: details.tracking ? "Tracking Detected" : "No Tracking",
-    color: details.tracking ? "#FF0000" : "#44c167", // Green for No Tracking
+    color: details.tracking ? "#ff5942" : "#44c167", // Green for No Tracking
   };
 
   // Log to check what's happening
@@ -293,59 +293,69 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       <Text style={[styles.resultText, { color: resultColor }]}>
         Result: {resultText}
       </Text>
-
+<Text style={styles.classificationText}>
+  Classification: {classification}
+</Text>
 
       {/* URL Type */}
       {type === 'URL' && (
         <>
           <View style={styles.mainContent}>
-            {/* Left Container */}
-            <View style={styles.leftContainer}>
-              <View style={styles.displayCheck}>
-                {securityIcon}
-                <Text style={styles.DetailsInfo}>{securityText}</Text>
-              </View>
+         {/* Left Container */}
+  <View style={styles.leftContainer}>
+    <View style={styles.displayCheck}>
+      {securityIcon}
+      <Text style={styles.DetailsInfo}>{securityText}</Text>
+    </View>
 
-              <View style={styles.displayCheck}>
-                <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
-                <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
-              </View>
+    {securityHeaderStatus.hasHeaders ? (
+      <TouchableOpacity style={[styles.DetailsInfoButton, { borderColor: '#44c167' }]} onPress={() => setIsModalVisible(true)}>
+        <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
+        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
+        <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#44c167" style={styles.chevronIcon} />
+      </TouchableOpacity>
+    ) : (
+      <View style={styles.displayCheck}>
+        <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
+        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
+      </View>
+    )}
 
-              {/* Redirects Button */}
-              {redirectCount > 0 ? (
-                <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-                  <Ionicons name="shield" size={screenWidth * 0.045} color={redirectStatus.color} />
-                  <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
-                  <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.displayCheck}>
-                  <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={redirectStatus.color} />
-                  <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
-                </View>
-              )}
-            </View>
+    {/* Redirects Button */}
+    {redirectCount > 0 ? (
+      <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+        <Ionicons name="shield" size={screenWidth * 0.045} color={redirectStatus.color} />
+        <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
+        <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
+      </TouchableOpacity>
+    ) : (
+      <View style={styles.displayCheck}>
+        <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={redirectStatus.color} />
+        <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
+      </View>
+    )}
+  </View>
 
-            {/* Vertical Divider */}
-            <View style={styles.verticalDivider} />
+  {/* Vertical Divider */}
+  <View style={styles.verticalDivider} />
 
-            {/* Right Container */}
-            <View style={styles.rightContainer}>
-              <View style={styles.displayCheck}>
-                <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={sslStrippingStatus.color} />
-                <Text style={styles.DetailsInfo}>{sslStrippingStatus.text}</Text>
-              </View>
+  {/* Right Container */}
+  <View style={styles.rightContainer}>
+    <View style={styles.displayCheck}>
+      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={sslStrippingStatus.color} />
+      <Text style={styles.DetailsInfo}>{sslStrippingStatus.text}</Text>
+    </View>
 
-              <View style={styles.displayCheck}>
-                <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
-                <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
-              </View>
+    <View style={styles.displayCheck}>
+      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
+      <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
+    </View>
 
-              <View style={styles.displayCheck}>
-                <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={trackingStatus.color} />
-                <Text style={styles.DetailsInfo}>{trackingStatus.text}</Text>
-              </View>
-            </View>
+    <View style={styles.displayCheck}>
+      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={trackingStatus.color} />
+      <Text style={styles.DetailsInfo}>{trackingStatus.text}</Text>
+    </View>
+  </View>
           </View>
 
           {/* Divider */}
@@ -425,7 +435,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
 
           {/* Visibility */}
           <View style={styles.displayCheck}>
-            <Ionicons name={hidden === 'Hidden' ? "eye-off-outline" : "eye-outline"} size={screenWidth * 0.045} color={hidden === 'Hidden' ? "#ff0000" : "#44c167"} />
+            <Ionicons name={hidden === 'Hidden' ? "eye-off-outline" : "eye-outline"} size={screenWidth * 0.045} color={hidden === 'Hidden' ? "#ff5942" : "#44c167"} />
             <Text style={styles.DetailsInfo}>Visibility: {hidden === 'Hidden' ? 'Hidden' : 'Visible'}</Text>
           </View>
 
@@ -845,5 +855,13 @@ const styles = StyleSheet.create({
   chevronIcon: {
     marginLeft: 'auto',
   },
+
+  classificationText: {
+    fontSize: screenWidth * 0.0375, // Adjust size to be consistent with other text
+    color: '#000', // Black color for contrast
+    textAlign: 'center',
+    marginTop: screenWidth * 0.01875, // Add some spacing above
+  },
+  
 });
 export default ScannedDataBox;

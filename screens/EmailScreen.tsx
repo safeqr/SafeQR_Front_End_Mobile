@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   },
   banner: {
     position: 'absolute',
-    top: screenHeight * 0.4, // Adjusts the banner to appear in the middle of the screen
+    top: screenHeight * 0.45, // Adjusts the banner to appear in the middle of the screen
     left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
     right: screenWidth * 0.1,
     backgroundColor: '#ff69b4',
