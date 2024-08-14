@@ -459,7 +459,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
 
 
 
-      {type === 'PHONE' && (
+      {type === 'PHONE Nume' && (
         <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
           <View style={styles.dividerHorizontal} />
           <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />

@@ -16,8 +16,10 @@ const HistoryScreen: React.FC = () => {
   const histories = useSelector((state: RootState) => state.qrCodes.histories);
   const { userAttributes } = useFetchUserAttributes();
   const [showBookmarks, setShowBookmarks] = useState<boolean>(false);
+
   const [qrCodeToDelete, setQrCodeToDelete] = useState<string | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
+  const [isScannedDataModalVisible, setIsScannedDataModalVisible] = useState<boolean>(false);
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [historiesError, setHistoriesError] = useState<string | null>(null);
   const [selectedQrCodeId, setSelectedQrCodeId] = useState<string | null>(null);
@@ -42,30 +44,34 @@ const HistoryScreen: React.FC = () => {
     }
   }, [userAttributes?.sub, fetchHistories]);
 
-  const handleDelete = useCallback((qrCodeId: string) => {
+  const handleDeleteQrCode = useCallback((qrCodeId: string) => {
     if (userAttributes?.sub) {
       dispatch(deleteQRCode({ userId: userAttributes.sub, qrCodeId }));
-      setIsModalVisible(false);
+      setIsDeleteModalVisible(false);
     }
   }, [dispatch, userAttributes]);
 
-  const filteredQrCodes = showBookmarks ? histories.filter(qr => qr.bookmarked) : histories;
-
-  const handleItemPress = (item: QRCodeType) => {
+  const handleSelectQrCodeForView = (item: QRCodeType) => {
     setSelectedQrCodeId(item.data.id || null);
+    setIsScannedDataModalVisible(true);
   };
 
-  const clearSelectedData = () => {
+  const clearSelectedQrCodeData = () => {
     setSelectedQrCodeId(null);
+    setIsScannedDataModalVisible(false);
   };
+
+  const filteredQrCodes = showBookmarks
+    ? histories.filter((qr) => qr.bookmarked)
+    : histories;
 
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => { setShowBookmarks(false); clearSelectedData(); }}>
+        <TouchableOpacity onPress={() => { setShowBookmarks(false); clearSelectedQrCodeData(); }}>
           <Text style={!showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>History</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { setShowBookmarks(true); clearSelectedData(); }}>
+        <TouchableOpacity onPress={() => { setShowBookmarks(true); clearSelectedQrCodeData(); }}>
           <Text style={showBookmarks ? styles.headerTextActive : styles.headerTextInactive}>Bookmarks</Text>
         </TouchableOpacity>
       </View>
@@ -78,18 +84,12 @@ const HistoryScreen: React.FC = () => {
         </Text>
       )}
 
-      {selectedQrCodeId && (
-        <View style={styles.scannedDataBoxContainer}>
-          <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedData} />
-        </View>
-      )}
-
       <FlatList
         data={filteredQrCodes}
         renderItem={({ item }) => (
           <View style={styles.itemContainer}>
             <View style={styles.itemLeft}>
-              <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.itemContent}>
+              <TouchableOpacity onPress={() => handleSelectQrCodeForView(item)} style={styles.itemContent}>
                 <Image source={require('../assets/ScanIcon3.png')} style={styles.scanIcon} />
                 <View style={styles.textContainer}>
                   <Text style={styles.dataText} numberOfLines={1} ellipsizeMode="tail">{item.data.contents}</Text>
@@ -105,9 +105,9 @@ const HistoryScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity onPress={() => {
                 setQrCodeToDelete(item.data.id);
-                setIsModalVisible(true);
-                }}>
-                <Ionicons name="close-circle-outline" size={screenWidth * 0.06} color="#ff69b4" />
+                setIsDeleteModalVisible(true);
+              }}>
+                <Ionicons name="trash-outline" size={screenWidth * 0.06} color="#ff69b4" />
               </TouchableOpacity>
             </View>
           </View>
@@ -116,21 +116,38 @@ const HistoryScreen: React.FC = () => {
         contentContainerStyle={styles.flatListContent}
       />
 
+      {/* Modal for ScannedDataBox */}
+      <Modal
+        visible={isScannedDataModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={clearSelectedQrCodeData}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalOverlayTouchable} onPress={clearSelectedQrCodeData} activeOpacity={1}>
+            <View style={styles.modalContainer}>
+              <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedQrCodeData} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Modal to confirm deletion */}
       <Modal
         transparent={true}
-        visible={isModalVisible}
+        visible={isDeleteModalVisible}
         animationType="fade"
-        onRequestClose={() => setIsModalVisible(false)}
+        onRequestClose={() => setIsDeleteModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Are you sure?</Text>
             <Text style={styles.modalText}>If bookmarked, this will be removed from both History and Bookmarks.</Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.modalButton} onPress={() => handleDelete(qrCodeToDelete!)}>
+              <TouchableOpacity style={styles.modalButton} onPress={() => handleDeleteQrCode(qrCodeToDelete!)}>
                 <Text style={styles.modalButtonText}>Yes, Delete</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setIsModalVisible(false)}>
+              <TouchableOpacity style={styles.modalButton} onPress={() => setIsDeleteModalVisible(false)}>
                 <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
               </TouchableOpacity>
             </View>
@@ -146,7 +163,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f0fc',
     padding: 20,
-    paddingTop: screenHeight * 0.05, // Add padding from the top
+    paddingTop: screenHeight * 0.05,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -212,14 +229,21 @@ const styles = StyleSheet.create({
     color: '#ff69b4',
     marginVertical: screenHeight * 0.02,
   },
-  scannedDataBoxContainer: {
-    marginBottom: screenHeight * 0.02,
-  },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalOverlayTouchable: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalContainer: {
+    marginHorizontal: '5%',
+    borderRadius: screenWidth * 0.025,
+    backgroundColor: 'white',
+    padding: screenWidth * 0.025,
+    elevation: 5,
   },
   modalContent: {
     width: '80%',

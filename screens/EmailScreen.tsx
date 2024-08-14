@@ -24,10 +24,10 @@ const EmailScreen: React.FC = () => {
   const [messageToDelete, setMessageToDelete] = useState(null);
 
   // Start scanning inbox only once when the component mounts
-useEffect(() => {
-  startInboxScanning(); 
-  fetchUserEmail();
-}, []);
+  useEffect(() => {
+    startInboxScanning(); 
+    fetchUserEmail();
+  }, []);
 
   // Function to fetch user email
   const fetchUserEmail = async () => {
@@ -174,7 +174,6 @@ useEffect(() => {
   );
 
   const handleUrlClick = (id) => {
-    console.log('handleURLClik ID :',)
     setSelectedQrCodeId(id);
     setIsModalVisible(true);
   };
@@ -279,12 +278,14 @@ useEffect(() => {
       >
         {/* The greyspace outside, made clickable to close the modal */}
         <TouchableOpacity
-          style={styles.modalContainer}
+          style={styles.modalOverlay}
           activeOpacity={1}
           onPressOut={() => setIsModalVisible(false)}
         >
           {/* Ensure ScannedDataBox does not render another modal */}
-          <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={() => setIsModalVisible(false)} />
+          <View style={styles.modalContainer}>
+            <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={() => setIsModalVisible(false)} />
+          </View>
         </TouchableOpacity>
       </Modal>
 
@@ -295,23 +296,25 @@ useEffect(() => {
         animationType="fade"
         onRequestClose={() => setIsDeleteModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Are you sure?</Text>
-            <Text style={styles.modalText}>This will only delete the entry on the app and not the actual email.</Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.modalButton} 
-                onPress={confirmDelete}
-              >
-                <Text style={styles.modalButtonText}>Yes, Delete</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.modalButton} 
-                onPress={() => setIsDeleteModalVisible(false)}
-              >
-                <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
-              </TouchableOpacity>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Are you sure?</Text>
+              <Text style={styles.modalText}>This will only delete the entry on the app and not the actual email.</Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={styles.modalButton} 
+                  onPress={confirmDelete}
+                >
+                  <Text style={styles.modalButtonText}>Yes, Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.modalButton} 
+                  onPress={() => setIsDeleteModalVisible(false)}
+                >
+                  <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
@@ -416,38 +419,38 @@ const styles = StyleSheet.create({
   },
   banner: {
     position: 'absolute',
-    top: screenHeight * 0.45, // Adjusts the banner to appear in the middle of the screen
-    left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
+    top: screenHeight * 0.45, 
+    left: screenWidth * 0.1,  
     right: screenWidth * 0.1,
     backgroundColor: '#ff69b4',
-    paddingVertical: screenHeight * 0.02, // Adjust the height of the banner
+    paddingVertical: screenHeight * 0.02, 
     paddingHorizontal: screenWidth * 0.05,
     borderRadius: screenWidth * 0.05,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10, // Ensure it appears above other elements
+    zIndex: 10, 
   },
   errorBanner: {
     position: 'absolute',
-    top: screenHeight * 0.4, // Adjusts the banner to appear in the middle of the screen
-    left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
+    top: screenHeight * 0.4,
+    left: screenWidth * 0.1,
     right: screenWidth * 0.1,
     backgroundColor: '#ff69b4',
-    paddingVertical: screenHeight * 0.02, // Adjust the height of the banner
+    paddingVertical: screenHeight * 0.02,
     paddingHorizontal: screenWidth * 0.05,
     borderRadius: screenWidth * 0.05,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10, // Ensure it appears above other elements
-  },
-  bannerText: {
+    zIndex: 10,
+  }, bannerText: {
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: screenWidth * 0.04,
   },
+  
   innerModalContainer: {
-    backgroundColor: '#ffe6f0', // pink box color
+    backgroundColor: '#ffe6f0',
     padding: screenWidth * 0.05,
     borderRadius: screenWidth * 0.03,
     alignItems: 'center',
@@ -456,7 +459,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: screenWidth * 0.02,
     right: screenWidth * 0.02,
-    zIndex: 1, // Ensure it is above other content
+    zIndex: 1,
   },
   deleteButtonContainer: {
     flexDirection: 'row',
@@ -469,11 +472,17 @@ const styles = StyleSheet.create({
     color: '#ff69b4',
     fontSize: screenWidth * 0.035,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    marginHorizontal: '5%',
+    borderRadius: screenWidth * 0.025,
+    backgroundColor: 'white',
+    padding: screenWidth * 0.025,
+    elevation: 5,
   },
   modalContent: {
     width: '80%',
