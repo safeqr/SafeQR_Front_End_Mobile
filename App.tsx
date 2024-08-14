@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect  } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider } from 'react-redux';
@@ -12,6 +12,8 @@ import { withAuthenticator } from '@aws-amplify/ui-react-native';
 import { Amplify } from 'aws-amplify';
 import config from './src/aws-exports';
 import { enableScreens } from 'react-native-screens';
+import { useKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import { View } from 'react-native';
 
 enableScreens();
 
@@ -25,6 +27,11 @@ const App: React.FC = () => {
   const clearScanData = () => {
     setScannedData('');
   };
+
+  useEffect(() => {
+    deactivateKeepAwake(); // Allow the screen to timeout
+  }, []);
+
 
   return (
     <Provider store={store}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Modal, Animated } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission, useCodeScanner } from 'react-native-vision-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,7 @@ import RNQRGenerator from 'rn-qr-generator';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { scanQRCode } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
+import NetInfo from '@react-native-community/netinfo';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -16,13 +17,41 @@ const QRScannerScreen: React.FC = () => {
   const [scanned, setScanned] = useState<boolean>(false);
   const [qrCodeId, setQRCodeId] = useState<string | null>(null); // State for QR code ID
   const [isScannedDataBoxVisible, setIsScannedDataBoxVisible] = useState<boolean>(false); // State for ScannedDataBox visibility
-
+  const [bannerOpacity] = useState(new Animated.Value(0)); // Initialize bannerOpacity as an Animated.Value
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
+  const [isConnected, setIsConnected] = useState<boolean>(true); // State for network connection
 
   useEffect(() => {
     requestPermission();
+
+    // Subscribe to network state updates
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
+      if (!state.isConnected) {
+        showBanner(); // Show the banner when the device is offline
+      }
+    });
+
+    // Unsubscribe when component unmounts
+    return () => unsubscribe();
   }, []);
+
+  const showBanner = () => {
+    Animated.timing(bannerOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(bannerOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, 3000);
+    });
+  };
 
   const handlePayload = async (payload: string) => {
     setScanned(true);
@@ -88,6 +117,11 @@ const QRScannerScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Banner for network connectivity */}
+      <Animated.View style={[styles.banner, { opacity: bannerOpacity }]}>
+        <Text style={styles.bannerText}>No Internet Connection</Text>
+      </Animated.View>
+
       <Text style={styles.titleText}>Welcome to</Text>
       <Image source={require('../assets/SafeQR_Logo 1.png')} style={styles.logo} />
       <Text style={styles.welcomeText}>Please point the camera at the QR Code</Text>
@@ -270,6 +304,25 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  banner: {
+    position: 'absolute',
+    top: screenHeight * 0.4, // Adjusts the banner to appear in the middle of the screen
+    left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
+    right: screenWidth * 0.1,
+    backgroundColor: '#ff69b4',
+    paddingVertical: screenHeight * 0.02, // Adjust the height of the banner
+    paddingHorizontal: screenWidth * 0.05,
+    borderRadius: screenWidth * 0.05,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10, // Ensure it appears above other elements
+  },
+  bannerText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: screenWidth * 0.04,
+  }
 });
 
 export default QRScannerScreen;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Clipboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Clipboard, Platform, Animated  } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { getQRCodeDetails } from '../api/qrCodeAPI';
@@ -22,6 +22,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const [qrDetails, setQrDetails] = useState<any>(null);
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState('');
+  const [error, setError] = useState<string | null>(null); // State to store error message
+  const [bannerOpacity] = useState(new Animated.Value(0)); // State for banner opacity
+
 
 
 
@@ -34,6 +37,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         console.log('details for scannedDataBOX:', details);
       } catch (error) {
         console.error('Error fetching QR details:', error);
+        showBanner(); // Show the error banner
       }
     };
 
@@ -49,6 +53,24 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       </View>
     );
   }
+
+  // Function to show the error banner
+  const showBanner = () => {
+    Animated.timing(bannerOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(bannerOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, 3000);
+    });
+  };
+
 
 
   const data = qrDetails.data || {};

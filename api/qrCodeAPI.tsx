@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 const { API_BASE_URL, ENVIRONMENT } = Constants.expoConfig.extra;
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
@@ -20,6 +20,10 @@ const API_URL_GET_EMAILS = "/v1/gmail/getEmails";
 const API_URL_GET_SCANNED_EMAILS = "/v1/gmail/getScannedEmails";
 const API_URL_GET_USER = "/v1/user/getUser"; 
 
+const API_URL_GMAIL_DELETE_MESSAGE = "/v1/gmail/deleteMessage";
+const API_URL_GMAIL_DELETE_ALL_MESSAGES = "/v1/gmail/deleteAllMessages";
+
+const API_URL_TIPS_GET = "/v1/tips/getTips";
 
 // Create an Axios instance
 const apiClient = axios.create({
@@ -53,21 +57,23 @@ apiClient.interceptors.request.use(
 );
 
 // Define a generic function to handle all types of requests
-export const apiRequest = async (config) => {
+export const apiRequest = async (config: AxiosRequestConfig<any>) => {
   try {
+    const methodName = config.method?.toUpperCase() || 'REQUEST';
     console.log("ENVIRONMENT:", ENVIRONMENT);
-    console.log(`API Call - ${config.method.toUpperCase()}:`, config.url, config.data || '');
+    console.log(`API Call - ${methodName}:`, config.url, config.data || '');
     console.log(config);
     const response = await apiClient(config);
-    console.log('API Response:', response.data);
+    console.log(`API Response for ${methodName}:`, response.data);
     return response.data;
   } catch (error) {
+    const methodName = config.method?.toUpperCase() || 'REQUEST';
     if (error.response) {
-      console.error('API Error - Response:', error.response.data);
+      console.error(`API Error - Response for ${methodName}:`, error.response.data);
     } else if (error.request) {
-      console.error('API Error - No Response:', error.request);
+      console.error(`API Error - No Response for ${methodName}:`, error.request);
     } else {
-      console.error('API Error - General:', error.message);
+      console.error(`API Error - General for ${methodName}:`, error.message);
     }
     throw error;
   }
@@ -86,7 +92,7 @@ const fetchUserId = async () => {
 };
 
 // Function to handle /scan request
-export const scanQRCode = async (data) => {
+export const scanQRCode = async (data: string) => {
   return apiRequest({
     method: 'post',
     url: `${API_BASE_URL}${API_URL_SCAN}`,
@@ -167,24 +173,24 @@ export const getScannedEmails = async () => {
       url: `${API_BASE_URL}${API_URL_GET_SCANNED_EMAILS}`
     });
 
-    console.log("API Response:", response);
+    console.log("API Response for getScannedEmails:", response);
     return response;
   } catch (error) {
     console.error("Error during getScannedEmails API call:", error);
 
     if (error.response) {
-      console.error("Response error data:", error.response.data);
+      console.error("Response error data for getScannedEmails:", error.response.data);
     } else if (error.request) {
-      console.error("Request error, no response received:", error.request);
+      console.error("Request error, no response received for getScannedEmails:", error.request);
     } else {
-      console.error("Error message:", error.message);
+      console.error("Error message for getScannedEmails:", error.message);
     }
 
     throw error;
   }
 };
 
-// Function to get start the scanning of inbox in server
+// Function to start the scanning of inbox in the server
 export const getEmails = async (accessToken: string, refreshToken: string) => {
   console.log("getEmails function called");
 
@@ -199,23 +205,22 @@ export const getEmails = async (accessToken: string, refreshToken: string) => {
       },
     });
 
-    console.log("API Response:", response);
+    console.log("API Response for getEmails:", response);
     return response;
   } catch (error) {
     console.error("Error during getEmails API call:", error);
 
     if (error.response) {
-      console.error("Response error data:", error.response.data);
+      console.error("Response error data for getEmails:", error.response.data);
     } else if (error.request) {
-      console.error("Request error, no response received:", error.request);
+      console.error("Request error, no response received for getEmails:", error.request);
     } else {
-      console.error("Error message:", error.message);
+      console.error("Error message for getEmails:", error.message);
     }
 
     throw error;
   }
 };
-
 
 // Get user information
 export const getUserInfo = async () => {
@@ -224,3 +229,15 @@ export const getUserInfo = async () => {
     url: `${API_BASE_URL}${API_URL_GET_USER}`,
   });
 };
+
+// Function to delete an email
+export const deleteEmail = async (messageId: string) => {
+  const response = await apiRequest({
+    method: 'put',
+    url: `${API_BASE_URL}${API_URL_GMAIL_DELETE_MESSAGE}`,
+    data: { messageId },
+  });
+  return response;
+};
+
+// Function to delete all emails
