@@ -5,38 +5,63 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import RNQRGenerator from 'rn-qr-generator';
 import ScannedDataBox from '../components/ScannedDataBox';
-import { scanQRCode } from '../api/qrCodeAPI';
+import { scanQRCode, getQRTips } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
 import NetInfo from '@react-native-community/netinfo';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const QRScannerScreen: React.FC = () => {
+  // State management
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
   const [enableTorch, setEnableTorch] = useState<boolean>(false);
   const [scanned, setScanned] = useState<boolean>(false);
-  const [qrCodeId, setQRCodeId] = useState<string | null>(null); // State for QR code ID
-  const [isScannedDataBoxVisible, setIsScannedDataBoxVisible] = useState<boolean>(false); // State for ScannedDataBox visibility
-  const [bannerOpacity] = useState(new Animated.Value(0)); // Initialize bannerOpacity as an Animated.Value
+  const [qrCodeId, setQRCodeId] = useState<string | null>(null);
+  const [isScannedDataBoxVisible, setIsScannedDataBoxVisible] = useState<boolean>(false);
+  const [bannerOpacity] = useState(new Animated.Value(0));
+  const [isConnected, setIsConnected] = useState<boolean>(true);
+  const [qrTip, setQrTip] = useState<string>('Always scan QR codes from trusted sources');
+
+  // Camera permissions and device management
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
-  const [isConnected, setIsConnected] = useState<boolean>(true); // State for network connection
 
+  // Fetch QR Tips and manage polling
   useEffect(() => {
-    requestPermission();
+    const fetchTips = async () => {
+      try {
+        const response = await getQRTips();
+        setQrTip(response.tips); // Set the qrTip state to the value of the tips property
+      } catch (error) {
+        console.error('Error fetching QR tips:', error);
+      }
+    };
+    
+
+    requestPermission(); // Request camera permission on component mount
+
+    // Initial fetch for QR tips
+    fetchTips();
+
+    // Set interval for fetching QR tips every 5 seconds
+    const intervalId = setInterval(fetchTips, 10000);
 
     // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsConnected(state.isConnected);
       if (!state.isConnected) {
-        showBanner(); // Show the banner when the device is offline
+        showBanner(); // Show banner if the device goes offline
       }
     });
 
-    // Unsubscribe when component unmounts
-    return () => unsubscribe();
+    // Cleanup on component unmount
+    return () => {
+      clearInterval(intervalId); // Clear interval
+      unsubscribe(); // Unsubscribe from network state updates
+    };
   }, []);
 
+  // Show an offline banner
   const showBanner = () => {
     Animated.timing(bannerOpacity, {
       toValue: 1,
@@ -53,6 +78,7 @@ const QRScannerScreen: React.FC = () => {
     });
   };
 
+  // Handle payload after scanning QR code
   const handlePayload = async (payload: string) => {
     setScanned(true);
     console.info("Decoded QR Code, Payload is: ", payload);
@@ -60,44 +86,43 @@ const QRScannerScreen: React.FC = () => {
     try {
       const response = await scanQRCode(payload);
       const qrCodeId = response.qrcode.data.id;
-      // Store the QR code ID for later use
-      setQRCodeId(qrCodeId);
-      setIsScannedDataBoxVisible(true); // Show ScannedDataBox pop-up
-      console.log("QR code scanned successfully, ID:", qrCodeId);
+      setQRCodeId(qrCodeId); // Store QR code ID
+      setIsScannedDataBoxVisible(true); // Show the ScannedDataBox pop-up
     } catch (error) {
       console.error("Error scanning QR code:", error);
     }
   };
 
+  // Use the camera to scan QR codes
   const codeScanner = useCodeScanner({
     codeTypes: ['qr'], // Only scan QR codes
     onCodeScanned: (codes) => {
       if (!scanned && codes[0]?.value) {
-        handlePayload(codes[0].value); // Extract and handle the value only if it exists
+        handlePayload(codes[0].value); // Handle the QR code value
       }
     }
   });
 
+  // Read QR code from an image
   const readQRFromImage = async () => {
     console.log("Reading QR code from image");
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false, // Don't ask user to crop images
+      allowsEditing: false,
       quality: 1,
     });
 
-    if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) { // Ensure the uri is not empty 
+    if (result && result.assets && result.assets.length > 0 && result.assets[0].uri) {
       try {
         const detectionResult = await RNQRGenerator.detect({
-          uri: result.assets[0].uri, // Local path of the image
+          uri: result.assets[0].uri,
         });
 
         const { values } = detectionResult;
 
         if (values.length > 0) {
-          handlePayload(values[0]); // Use the first detected QR code value
-          console.log('QR code data from image:', values[0]);
+          handlePayload(values[0]); // Handle the first detected QR code value
         } else {
           console.log("No QR code found in the selected image");
         }
@@ -107,10 +132,12 @@ const QRScannerScreen: React.FC = () => {
     }
   };
 
+  // Check for camera permissions
   if (!hasPermission) {
     return <Text>Requesting camera permission...</Text>;
   }
 
+  // Wait for the device to be ready
   if (!device) {
     return <Text>Loading camera...</Text>;
   }
@@ -156,6 +183,14 @@ const QRScannerScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
+      {/* QR Code Tips Below Camera Container */}
+      <View style={styles.tipsContainer}>
+        <View style={styles.iconTextRow}>
+          <Ionicons name="bulb" size={24} color="red" />
+          <Text style={styles.tipsText}>{qrTip}</Text>
+        </View>
+      </View>
+
       {/* Scanned Data Box as a pop-up */}
       {isScannedDataBoxVisible && (
         <View style={styles.scannedDataBoxPopup}>
@@ -195,6 +230,7 @@ const QRScannerScreen: React.FC = () => {
   );
 };
 
+// Stylesheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -232,18 +268,6 @@ const styles = StyleSheet.create({
     top: screenHeight * 0.05,
     right: 20,
   },
-  splashContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f0fc',
-    height: '100%',
-    width: '100%',
-  },
-  camera: {
-    width: '100%',
-    height: '100%',
-  },
   flashButton: {
     position: 'absolute',
     bottom: screenHeight * 0.025,
@@ -268,7 +292,7 @@ const styles = StyleSheet.create({
   },
   scannedDataBoxPopup: {
     position: 'absolute',
-    top: '20%', 
+    top: '20%',
     left: '5%',
     right: '5%',
     zIndex: 2,
@@ -278,7 +302,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   settingsModal: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   settingsModalContainer: {
     flex: 1,
@@ -306,23 +330,42 @@ const styles = StyleSheet.create({
   },
   banner: {
     position: 'absolute',
-    top: screenHeight * 0.4, // Adjusts the banner to appear in the middle of the screen
-    left: screenWidth * 0.1,  // Adjust these values to center the banner as needed
+    top: screenHeight * 0.4,
+    left: screenWidth * 0.1,
     right: screenWidth * 0.1,
     backgroundColor: '#ff69b4',
-    paddingVertical: screenHeight * 0.02, // Adjust the height of the banner
+    paddingVertical: screenHeight * 0.02,
     paddingHorizontal: screenWidth * 0.05,
     borderRadius: screenWidth * 0.05,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10, // Ensure it appears above other elements
+    zIndex: 10,
   },
   bannerText: {
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
     fontSize: screenWidth * 0.04,
-  }
+  },
+  tipsContainer: {
+    backgroundColor: '#fff', // Make sure the container background matches the white box
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10, // Space from the camera container
+  },
+  iconTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center', // This will align the icon and text vertically
+  },
+  tipsText: {
+    color: '#f41c87', // Adjusted color to match the pink theme
+    fontSize: 16,
+    textAlign: 'center',
+    marginLeft: 5, // Add some spacing between the icon and the text
+    paddingHorizontal: 10, // Add horizontal padding to ensure text isn't too close to the edges
+  },
+  
 });
 
 export default QRScannerScreen;

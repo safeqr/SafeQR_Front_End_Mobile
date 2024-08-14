@@ -25,7 +25,8 @@ const EmailScreen: React.FC = () => {
 
   // Start scanning inbox only once when the component mounts
 useEffect(() => {
-  startInboxScanning();
+  startInboxScanning(); 
+  fetchUserEmail();
 }, []);
 
   // Function to fetch user email

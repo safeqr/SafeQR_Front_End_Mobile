@@ -240,4 +240,16 @@ export const deleteEmail = async (messageId: string) => {
   return response;
 };
 
-// Function to delete all emails
+// Function to fetch QR code tips
+export const getQRTips = async () => {
+  try {
+    const response = await apiRequest({
+      method: 'get',
+      url: `${API_BASE_URL}${API_URL_TIPS_GET}`,
+    });
+    return response; 
+  } catch (error) {
+    console.error('Error fetching QR tips:', error);
+    throw error;
+  }
+};
