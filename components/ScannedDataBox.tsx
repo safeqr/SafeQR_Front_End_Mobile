@@ -234,8 +234,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const hasExecutableStatus = {
     hasExecutable: details.hasExecutable ?? false,
     text: details.hasExecutable ? "Executable Detected" : "No Executable",
-    color: details.hasExecutable ? "#ff5942" : "#44c167", // Green for No Executable
+    color: details.hasExecutable ? "#FFA500" : "#44c167",
   };
+  
 
   // Log to check what's happening
   console.log('Executable Details:', details.hasExecutable);
@@ -347,10 +348,20 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       <Text style={styles.DetailsInfo}>{sslStrippingStatus.text}</Text>
     </View>
 
-    <View style={styles.displayCheck}>
-      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
-      <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
-    </View>
+{/* Executtable checking */}
+    {hasExecutableStatus.hasExecutable ? (
+  <TouchableOpacity style={styles.displayCheck}>
+    <Ionicons name="alert-circle" size={screenWidth * 0.045} color="#FFA500" />
+    <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
+  </TouchableOpacity>
+) : (
+  <View style={styles.displayCheck}>
+    <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
+    <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
+  </View>
+)}
+
+
 
     <View style={styles.displayCheck}>
       <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={trackingStatus.color} />
