@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Clipboard, Platform, Animated  } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Dimensions, Clipboard, Platform, Animated } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons, SimpleLineIcons } from '@expo/vector-icons';
 import { getQRCodeDetails } from '../api/qrCodeAPI';
 import SecureWebView from '../components/SecureWebView';
 import { startActivityAsync, ActivityAction } from 'expo-intent-launcher';
 import * as Linking from 'expo-linking';
-
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -19,14 +18,12 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isRedirectModalVisible, setIsRedirectModalVisible] = useState(false);
   const [isContentModalVisible, setIsContentModalVisible] = useState(false);
+  const [isTrackingModalVisible, setIsTrackingModalVisible] = useState(false);
   const [qrDetails, setQrDetails] = useState<any>(null);
   const [isWebViewVisible, setIsWebViewVisible] = useState(false);
   const [webViewUrl, setWebViewUrl] = useState('');
   const [error, setError] = useState<string | null>(null); // State to store error message
   const [bannerOpacity] = useState(new Animated.Value(0)); // State for banner opacity
-
-
-
 
   useEffect(() => {
     const fetchQRDetails = async () => {
@@ -70,8 +67,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     });
   };
 
-
-
   const data = qrDetails.data || {};
   const details = qrDetails.details || {};
   const type = data.info?.type || 'Undefined';
@@ -85,7 +80,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
 
   const isShorteningService = details.shorteningService === 'Yes';
   const classification = details.classifications || 'Unknown';
-
 
   // Function to get security text and icon based on the URL description
   const getSecurityStatus = () => {
@@ -103,10 +97,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   };
   const { text: securityText, icon: securityIcon } = getSecurityStatus();
 
-
-
-
-  // Function to get result text and color based on the security status 
+  // Function to get result text and color based on the security status
   const getResultStatus = () => {
     if (result === 'UNSAFE') {
       return { text: 'UNSAFE', color: '#ff5942' }; // Red
@@ -121,9 +112,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     }
   };
   const { text: resultText, color: resultColor } = getResultStatus();
-
-
-
 
   // Function to determine security header status
   const getSecurityHeaderStatus = (headers) => {
@@ -148,8 +136,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   };
   const redirectStatus = getRedirectStatus(details.redirect || 0);
 
-
-
   // Truncate content string to specified length
   const truncateContent = (content: string, length: number) => {
     if (content.length > length) {
@@ -157,7 +143,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     }
     return content;
   };
-
 
   // Function to get encryption status and icon
   const getEncryptionStatus = (encryption) => {
@@ -185,7 +170,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   };
 
   const { text: encryptionText, icon: encryptionIcon } = getEncryptionStatus(encryption);
-
 
   // Function to open the Wi-Fi configuration in the OS
   const handleOpenUrl = (url: string) => {
@@ -216,9 +200,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     }
   };
 
-
-
-
   const sslStrippingStatus = {
     hasSSLStripping: details.sslStripping?.some(status => status === true) ?? false,
     text: details.sslStripping?.some(status => status === true)
@@ -227,40 +208,23 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     color: details.sslStripping?.some(status => status === true) ? "#ff5942" : "#44c167", // Green for No SSL Stripping
   };
 
-  // Log to check what's happening
-  console.log('SSL Stripping Details:', details.sslStripping);
-  console.log('SSL Stripping Status:', sslStrippingStatus);
-
   const hasExecutableStatus = {
     hasExecutable: details.hasExecutable ?? false,
     text: details.hasExecutable ? "Executable Detected" : "No Executable",
-    color: details.hasExecutable ? "#FFA500" : "#44c167",
+    color: details.hasExecutable ? "#ffa500" : "#44c167", // Orange for Executable Detected
+    iconName: details.hasExecutable ? "alert-circle" : "shield-checkmark", // Orange shield icon for Executable Detected
   };
-  
-
-  // Log to check what's happening
-  console.log('Executable Details:', details.hasExecutable);
-  console.log('Executable Status:', hasExecutableStatus);
 
   const trackingStatus = {
-    hasTracking: details.tracking ?? false,
-    text: details.tracking ? "Tracking Detected" : "No Tracking",
-    color: details.tracking ? "#ff5942" : "#44c167", // Green for No Tracking
+    hasTracking: details.trackingDescriptions?.length > 0 ?? false,
+    text: details.trackingDescriptions?.length > 0 ? "Tracking Detected" : "No Tracking",
+    color: details.trackingDescriptions?.length > 0 ? "#ff5942" : "#44c167", // Red for Tracking Detected
   };
 
-  // Log to check what's happening
-  console.log('Tracking Details:', details.tracking);
-  console.log('Tracking Status:', trackingStatus);
   const redirectCount = details.redirect ?? 0; // Default to 0 if undefined
 
-
-
-
   return (
-    
     <View style={styles.dataBox}>
-
-      
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
         <Ionicons name="close-circle-outline" size={screenWidth * 0.05} color="#ff69b4" />
       </TouchableOpacity>
@@ -274,7 +238,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       </View>
 
       <View style={styles.mainContent}>
-        {/* Display QR Code , timestamp and Description */}
+        {/* Display QR Code, timestamp and Description */}
         <View style={styles.qrSection}>
           <QRCode value={contents || 'No Data'} size={screenWidth * 0.2} backgroundColor="transparent" />
         </View>
@@ -282,11 +246,10 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         <View style={styles.detailsSection}>
           <Text style={styles.timestampText}>{data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Invalid Date'}</Text>
           <Text style={styles.typeText}>Description: {description}</Text>
-           {/* Conditionally display the shortening service message */}
-    {isShorteningService && (
-      <Text style={styles.shorteningServiceText}>This is a shortening service</Text>
-    )}
-    
+          {/* Conditionally display the shortening service message */}
+          {isShorteningService && (
+            <Text style={styles.shorteningServiceText}>This is a shortening service</Text>
+          )}
         </View>
       </View>
 
@@ -295,79 +258,83 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         Result: {resultText}
       </Text>
 
-
       {/* URL Type */}
       {type === 'URL' && (
         <>
-        <Text style={styles.classificationText}>
-  Classification: {classification}
-</Text>
+          <Text style={styles.classificationText}>
+            Classification: {classification}
+          </Text>
           <View style={styles.mainContent}>
-         {/* Left Container */}
-  <View style={styles.leftContainer}>
-    <View style={styles.displayCheck}>
-      {securityIcon}
-      <Text style={styles.DetailsInfo}>{securityText}</Text>
-    </View>
+            {/* Left Container */}
+            <View style={styles.leftContainer}>
+              <View style={styles.displayCheck}>
+                {securityIcon}
+                <Text style={styles.DetailsInfo}>{securityText}</Text>
+              </View>
 
-    {securityHeaderStatus.hasHeaders ? (
-      <TouchableOpacity style={[styles.DetailsInfoButton, { borderColor: '#44c167' }]} onPress={() => setIsModalVisible(true)}>
-        <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
-        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
-        <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#44c167" style={styles.chevronIcon} />
-      </TouchableOpacity>
-    ) : (
-      <View style={styles.displayCheck}>
-        <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
-        <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
-      </View>
-    )}
+              {securityHeaderStatus.hasHeaders ? (
+                <TouchableOpacity style={[styles.DetailsInfoButton, { borderColor: '#44c167' }]} onPress={() => setIsModalVisible(true)}>
+                  <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color="#44c167" />
+                  <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
+                  <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#44c167" style={styles.chevronIcon} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.displayCheck}>
+                  <MaterialCommunityIcons name="shield-off" size={screenWidth * 0.045} color={securityHeaderStatus.color} />
+                  <Text style={styles.DetailsInfo}>{securityHeaderStatus.text}</Text>
+                </View>
+              )}
 
-    {/* Redirects Button */}
-    {redirectCount > 0 ? (
-      <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
-        <Ionicons name="shield" size={screenWidth * 0.045} color={redirectStatus.color} />
-        <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
-        <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
-      </TouchableOpacity>
-    ) : (
-      <View style={styles.displayCheck}>
-        <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={redirectStatus.color} />
-        <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
-      </View>
-    )}
-  </View>
+              {/* Redirects Button */}
+              {redirectCount > 0 ? (
+                <TouchableOpacity style={styles.DetailsInfoButton} onPress={() => setIsRedirectModalVisible(true)}>
+                  <Ionicons name="shield" size={screenWidth * 0.045} color={redirectStatus.color} />
+                  <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
+                  <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff69b4" style={styles.chevronIcon} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.displayCheck}>
+                  <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={redirectStatus.color} />
+                  <Text style={styles.DetailsInfo}>{`Redirects: ${redirectCount}`}</Text>
+                </View>
+              )}
+            </View>
 
-  {/* Vertical Divider */}
-  <View style={styles.verticalDivider} />
+            {/* Vertical Divider */}
+            <View style={styles.verticalDivider} />
 
-  {/* Right Container */}
-  <View style={styles.rightContainer}>
-    <View style={styles.displayCheck}>
-      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={sslStrippingStatus.color} />
-      <Text style={styles.DetailsInfo}>{sslStrippingStatus.text}</Text>
-    </View>
-
-{/* Executtable checking */}
-    {hasExecutableStatus.hasExecutable ? (
-  <TouchableOpacity style={styles.displayCheck}>
-    <Ionicons name="alert-circle" size={screenWidth * 0.045} color="#FFA500" />
-    <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
-  </TouchableOpacity>
-) : (
-  <View style={styles.displayCheck}>
-    <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
-    <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
-  </View>
-)}
-
-
-
-    <View style={styles.displayCheck}>
-      <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={trackingStatus.color} />
-      <Text style={styles.DetailsInfo}>{trackingStatus.text}</Text>
-    </View>
-  </View>
+            {/* Right Container */}
+            <View style={styles.rightContainer}>
+              <View style={styles.displayCheck}>
+                <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={sslStrippingStatus.color} />
+                <Text style={styles.DetailsInfo}>{sslStrippingStatus.text}</Text>
+              </View>
+            {/* Executtable checking */}
+            {hasExecutableStatus.hasExecutable ? (
+                <TouchableOpacity style={styles.displayCheck}>
+                  <Ionicons name="alert-circle" size={screenWidth * 0.045} color="#FFA500" />
+                  <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.displayCheck}>
+                  <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={hasExecutableStatus.color} />
+                  <Text style={styles.DetailsInfo}>{hasExecutableStatus.text}</Text>
+                </View>
+              )}
+              {/* Tracking checking */}
+              {trackingStatus.hasTracking ? (
+                <TouchableOpacity style={[styles.DetailsInfoButton, { borderColor: '#ff5942' }]} onPress={() => setIsTrackingModalVisible(true)}>
+                  <Ionicons name="alert-circle" size={screenWidth * 0.045} color="#ff5942" />
+                  <Text style={styles.DetailsInfo}>{trackingStatus.text}</Text>
+                  <Ionicons name="chevron-forward" size={screenWidth * 0.045} color="#ff5942" style={styles.chevronIcon} />
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.displayCheck}>
+                  <Ionicons name="shield-checkmark" size={screenWidth * 0.045} color={trackingStatus.color} />
+                  <Text style={styles.DetailsInfo}>{trackingStatus.text}</Text>
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Divider */}
@@ -394,44 +361,37 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
             </TouchableOpacity>
           </View>
 
-        {/* Redirect Chain Pop UP */}
-<Modal
-  visible={isRedirectModalVisible}
-  transparent={true}
-  animationType="fade"
-  onRequestClose={() => setIsRedirectModalVisible(false)}
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Redirect Chain</Text>
-      <ScrollView style={styles.modalScrollContent}>
-        {details.redirectChain?.map((redirect: string, index: number) => (
-          <ScrollView 
-            key={index} 
-            horizontal={true} 
-            style={styles.horizontalScrollView}
-            contentContainerStyle={styles.horizontalContentContainer}>
-            <Text style={styles.modalText}>{redirect}</Text>
-          </ScrollView>
-        ))}
-      </ScrollView>
-      <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsRedirectModalVisible(false)}>
-        <Text style={styles.closeModalButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-
+          {/* Redirect Chain Pop UP */}
+          <Modal
+            visible={isRedirectModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setIsRedirectModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Redirect Chain</Text>
+                <ScrollView style={styles.modalScrollContent}>
+                  {details.redirectChain?.map((redirect: string, index: number) => (
+                    <ScrollView
+                      key={index}
+                      horizontal={true}
+                      style={styles.horizontalScrollView}
+                      contentContainerStyle={styles.horizontalContentContainer}>
+                      <Text style={styles.modalText}>{redirect}</Text>
+                    </ScrollView>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsRedirectModalVisible(false)}>
+                  <Text style={styles.closeModalButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </>
       )}
 
-
-
-
-
-
       {/* WIFI Type */}
-
       {type === 'WIFI' && (
         <>
           {/* SSID */}
@@ -466,10 +426,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
           </TouchableOpacity>
         </>
       )}
-
-
-
-
 
       {type === 'PHONE Nume' && (
         <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
@@ -507,8 +463,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </TouchableOpacity>
       )}
 
-
-
       {/* Full Content Modal */}
       <Modal
         visible={isContentModalVisible}
@@ -529,10 +483,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </Modal>
 
-
-
-
-      {/*POP UP Security Header and Redirect button*/}
+      {/* POP UP Security Header and Redirect button */}
       {/* Security Headers Modal */}
       <Modal
         visible={isModalVisible}
@@ -555,8 +506,6 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </View>
       </Modal>
 
-
-
       {/* WebView Modal */}
       <Modal
         visible={isWebViewVisible}
@@ -573,6 +522,34 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
           </View>
         </View>
       </Modal>
+
+      {/* Tracking Descriptions Modal */}
+      <Modal
+  visible={isTrackingModalVisible}
+  transparent={true}
+  animationType="fade"
+  onRequestClose={() => setIsTrackingModalVisible(false)}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Tracking Descriptions</Text>
+      <ScrollView style={styles.modalScrollContent}>
+        {details.trackingDescriptions?.map((description: string, index: number) => (
+          <ScrollView 
+            key={index} 
+            horizontal={true}  // Enable horizontal scrolling
+            style={styles.horizontalScrollView}
+            contentContainerStyle={styles.horizontalContentContainer}>
+            <Text style={styles.modalText}>{description}</Text>
+          </ScrollView>
+        ))}
+      </ScrollView>
+      <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsTrackingModalVisible(false)}>
+        <Text style={styles.closeModalButtonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };
@@ -665,6 +642,7 @@ const styles = StyleSheet.create({
     borderColor: '#ff69b4',
     width: '100%', // Make it take full width
   },
+
   // Display check styles
   // Aligning the boxes
   displayCheck: {
@@ -678,6 +656,7 @@ const styles = StyleSheet.create({
     marginVertical: screenWidth * 0.01875,
     width: '100%', // Make it take full width
   },
+
   // Details info text styles
   DetailsInfo: {
     fontSize: screenWidth * 0.026,
@@ -739,7 +718,6 @@ const styles = StyleSheet.create({
   horizontalContentContainer: {
     flexGrow: 1, // Ensure the content container expands to fit its children
   },
-
 
   // Close modal button styles
   closeModalButton: {
@@ -874,6 +852,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: screenWidth * 0.01875, // Add some spacing above
   },
-  
 });
+
 export default ScannedDataBox;
