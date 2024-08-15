@@ -26,6 +26,7 @@ const App: React.FC = () => {
 
   const clearScanData = () => {
     setScannedData('');
+    console.log('ClearScanedDATa');
   };
 
   useEffect(() => {

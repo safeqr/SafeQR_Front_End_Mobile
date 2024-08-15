@@ -11,7 +11,7 @@ import NetInfo from '@react-native-community/netinfo';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const QRScannerScreen: React.FC = () => {
+const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanData }) => {
   // State management
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState<boolean>(false);
   const [enableTorch, setEnableTorch] = useState<boolean>(false);
@@ -79,7 +79,14 @@ const QRScannerScreen: React.FC = () => {
       setIsScannedDataBoxVisible(false);
     });
   };
-
+  const clearSelectedQrCodeData = () => {
+    console.log("!!!!!clearSelectedQrCodeData");
+    setQRCodeId(null);
+    hideScannedDataBox();
+    setScanned(false); // Reset the scanned state so the camera can scan again
+    clearScanData(); // Call the clearScanData passed from App.tsx
+  };
+  
   // Show an offline banner
   const showBanner = () => {
     Animated.timing(bannerOpacity, {
@@ -174,12 +181,13 @@ const QRScannerScreen: React.FC = () => {
       <View style={styles.cameraContainer}>
         {device && (
           <Camera
-            style={StyleSheet.absoluteFill}
-            device={device}
-            isActive={!isSettingsModalVisible} // Disable the camera when settings modal is open
-            torch={enableTorch ? 'on' : 'off'}
-            codeScanner={codeScanner}
-          />
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={!isSettingsModalVisible && !isScannedDataBoxVisible} // Disable the camera when settings modal or ScannedDataBox is open
+          torch={enableTorch ? 'on' : 'off'}
+          codeScanner={codeScanner}
+        />
+        
         )}
 
         {/* Torch Button */}
@@ -210,24 +218,26 @@ const QRScannerScreen: React.FC = () => {
       </View>
 
       {/* Scanned Data Box as a modal with sliding animation */}
-      <Modal
-        transparent={true}
-        visible={isScannedDataBoxVisible}
-        animationType="none"
-        onRequestClose={hideScannedDataBox}
-      >
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={hideScannedDataBox}>
-          <Animated.View style={[styles.modalContainer, { transform: [{ translateY: scannedDataBoxY }] }]}>
-            <ScannedDataBox
-              qrCodeId={qrCodeId!}
-              clearScanData={() => {
-                setScanned(false);
-                hideScannedDataBox();
-              }}
-            />
-        </Animated.View>
-        </TouchableOpacity>
-      </Modal>
+<Modal
+  transparent={true}
+  visible={isScannedDataBoxVisible}
+  animationType="none"
+  onRequestClose={clearSelectedQrCodeData} // Call clearSelectedQrCodeData when the modal is requested to close
+>
+  <TouchableOpacity 
+    style={styles.modalOverlay} 
+    activeOpacity={1} 
+    onPress={clearSelectedQrCodeData} // Call clearSelectedQrCodeData on press
+  >
+    <Animated.View style={[styles.modalContainer, { transform: [{ translateY: scannedDataBoxY }] }]}>
+      <ScannedDataBox
+        qrCodeId={qrCodeId!}
+        clearScanData={clearSelectedQrCodeData} // Close modal and reset the scanned state
+      />
+    </Animated.View>
+  </TouchableOpacity>
+</Modal>
+
 
       {/* Settings Icon */}
       <TouchableOpacity onPress={() => setIsSettingsModalVisible(true)} style={styles.settingsButton}>
