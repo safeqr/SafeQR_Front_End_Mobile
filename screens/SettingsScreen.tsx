@@ -212,7 +212,7 @@ const SettingsScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
   
-      <Text style={styles.versionText}>Version 1.2</Text>
+      <Text style={styles.versionText}>Version 1.0</Text>
     </View>
   );
 };
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   deleteAllButton: {
     flexDirection: 'row',
-    backgroundColor: '#ff5941',
+    backgroundColor: '#f41c87',
     borderRadius: 25,
     paddingVertical: 10,
     paddingHorizontal: 20,

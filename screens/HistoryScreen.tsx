@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Modal, ActivityIndicator, Dimensions, Animated } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import ScannedDataBox from '../components/ScannedDataBox';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +19,11 @@ const HistoryScreen: React.FC = () => {
 
   const [qrCodeToDelete, setQrCodeToDelete] = useState<string | null>(null);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState<boolean>(false);
-  const [isScannedDataModalVisible, setIsScannedDataModalVisible] = useState<boolean>(false);
   const [historiesLoading, setHistoriesLoading] = useState(false);
   const [historiesError, setHistoriesError] = useState<string | null>(null);
   const [selectedQrCodeId, setSelectedQrCodeId] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false); // Modal for ScannedDataBox
+
 
   const fetchHistories = useCallback(async () => {
     if (!userAttributes?.sub) return;
@@ -51,19 +52,20 @@ const HistoryScreen: React.FC = () => {
     }
   }, [dispatch, userAttributes]);
 
+
   const handleSelectQrCodeForView = (item: QRCodeType) => {
     setSelectedQrCodeId(item.data.id || null);
-    setIsScannedDataModalVisible(true);
+    setIsModalVisible(true); // Show ScannedDataBox Modal
   };
 
   const clearSelectedQrCodeData = () => {
     setSelectedQrCodeId(null);
-    setIsScannedDataModalVisible(false);
+    setIsModalVisible(false); // Close ScannedDataBox Modal
   };
-
   const filteredQrCodes = showBookmarks
     ? histories.filter((qr) => qr.bookmarked)
     : histories;
+
 
   return (
     <View style={styles.container}>
@@ -116,21 +118,28 @@ const HistoryScreen: React.FC = () => {
         contentContainerStyle={styles.flatListContent}
       />
 
-      {/* Modal for ScannedDataBox */}
-      <Modal
-        visible={isScannedDataModalVisible}
+   {/* Modal for ScannedDataBox */}
+   <Modal
+        visible={isModalVisible}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={clearSelectedQrCodeData}
       >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalOverlayTouchable} onPress={clearSelectedQrCodeData} activeOpacity={1}>
-            <View style={styles.modalContainer}>
-              <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedQrCodeData} />
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* The greyspace outside, made clickable to close the modal */}
+        <TouchableOpacity
+          style={styles.scannedDataBoxModalOverlay}
+          activeOpacity={1}
+          onPressOut={clearSelectedQrCodeData}
+        >
+          {/* Ensure ScannedDataBox does not render another modal */}
+          <View style={styles.scannedDataBoxModalContainer}>
+            <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={clearSelectedQrCodeData} />
+          </View>
+        </TouchableOpacity>
       </Modal>
+
+
+
 
       {/* Modal to confirm deletion */}
       <Modal
@@ -275,6 +284,18 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: screenWidth * 0.04,
     color: '#000',
+  },
+  scannedDataBoxModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  scannedDataBoxModalContainer: {
+    marginHorizontal: '5%',
+    borderRadius: screenWidth * 0.025,
+    backgroundColor: 'white',
+    padding: screenWidth * 0.025,
+    elevation: 5,
   },
 });
 

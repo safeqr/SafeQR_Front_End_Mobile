@@ -21,6 +21,7 @@ const QRScannerScreen: React.FC = () => {
   const [bannerOpacity] = useState(new Animated.Value(0));
   const [isConnected, setIsConnected] = useState<boolean>(true);
   const [qrTip, setQrTip] = useState<string>('Always scan QR codes from trusted sources');
+  const [scannedDataBoxY] = useState(new Animated.Value(screenHeight)); // Start off-screen
 
   // Camera permissions and device management
   const { hasPermission, requestPermission } = useCameraPermission();
@@ -36,7 +37,6 @@ const QRScannerScreen: React.FC = () => {
         console.error('Error fetching QR tips:', error);
       }
     };
-    
 
     requestPermission(); // Request camera permission on component mount
 
@@ -61,6 +61,25 @@ const QRScannerScreen: React.FC = () => {
     };
   }, []);
 
+  const showScannedDataBox = () => {
+    setIsScannedDataBoxVisible(true);
+    Animated.timing(scannedDataBoxY, {
+      toValue: 0, // Slide the modal to the top of the screen
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const hideScannedDataBox = () => {
+    Animated.timing(scannedDataBoxY, {
+      toValue: screenHeight, // Move it back off-screen
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsScannedDataBoxVisible(false);
+    });
+  };
+
   // Show an offline banner
   const showBanner = () => {
     Animated.timing(bannerOpacity, {
@@ -78,7 +97,6 @@ const QRScannerScreen: React.FC = () => {
     });
   };
 
-  // Handle payload after scanning QR code
   const handlePayload = async (payload: string) => {
     setScanned(true);
     console.info("Decoded QR Code, Payload is: ", payload);
@@ -86,8 +104,8 @@ const QRScannerScreen: React.FC = () => {
     try {
       const response = await scanQRCode(payload);
       const qrCodeId = response.qrcode.data.id;
-      setQRCodeId(qrCodeId); // Store QR code ID
-      setIsScannedDataBoxVisible(true); // Show the ScannedDataBox pop-up
+      setQRCodeId(qrCodeId);
+        showScannedDataBox(); // Show the ScannedDataBox pop-up with animation
     } catch (error) {
       console.error("Error scanning QR code:", error);
     }
@@ -191,18 +209,25 @@ const QRScannerScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Scanned Data Box as a pop-up */}
-      {isScannedDataBoxVisible && (
-        <View style={styles.scannedDataBoxPopup}>
-          <ScannedDataBox
-            qrCodeId={qrCodeId!}
-            clearScanData={() => {
-              setScanned(false);
-              setIsScannedDataBoxVisible(false);
-            }}
-          />
-        </View>
-      )}
+      {/* Scanned Data Box as a modal with sliding animation */}
+      <Modal
+        transparent={true}
+        visible={isScannedDataBoxVisible}
+        animationType="none"
+        onRequestClose={hideScannedDataBox}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={hideScannedDataBox}>
+          <Animated.View style={[styles.modalContainer, { transform: [{ translateY: scannedDataBoxY }] }]}>
+            <ScannedDataBox
+              qrCodeId={qrCodeId!}
+              clearScanData={() => {
+                setScanned(false);
+                hideScannedDataBox();
+              }}
+            />
+        </Animated.View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Settings Icon */}
       <TouchableOpacity onPress={() => setIsSettingsModalVisible(true)} style={styles.settingsButton}>
@@ -257,17 +282,15 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   cameraContainer: {
-    width: '100%', // Adjust the width as needed
-    height: '45%', // Adjust the height as needed
+    width: '100%',
+    height: '45%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
     overflow: 'hidden',
-    alignSelf: 'center', // Center the container horizontally
-    marginTop: '10%', // Adjust the top margin to position it vertically in the middle
+    alignSelf: 'center',
+    marginTop: '10%',
   },
-  
-  
   settingsButton: {
     position: 'absolute',
     top: screenHeight * 0.05,
@@ -295,14 +318,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     borderRadius: screenWidth * 0.0625,
   },
-  scannedDataBoxPopup: {
-    position: 'absolute',
-    top: '20%',
-    left: '5%',
-    right: '5%',
-    zIndex: 2,
-    backgroundColor: 'white',
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center', // Aligns the modal to the bottom by default
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    marginHorizontal: '5%',
     borderRadius: screenWidth * 0.025,
+    backgroundColor: 'white',
     padding: screenWidth * 0.025,
     elevation: 5,
   },
@@ -312,15 +336,14 @@ const styles = StyleSheet.create({
   settingsModalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#f8f0fc', // Full pink background to match the app's theme
+    backgroundColor: '#f8f0fc',
   },
-  
   settingsModalContent: {
     flex: 1,
-    backgroundColor: '#f8f0fc', // Full pink background for the content as well
+    backgroundColor: '#f8f0fc',
     padding: screenWidth * 0.05,
-    borderTopLeftRadius: 0, // Remove border radius to avoid white edges
-    borderTopRightRadius: 0, // Remove border radius to avoid white edges
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     alignItems: 'center',
   },
   closeButton: {
@@ -353,24 +376,23 @@ const styles = StyleSheet.create({
     fontSize: screenWidth * 0.04,
   },
   tipsContainer: {
-    backgroundColor: '#fff', // Make sure the container background matches the white box
+    backgroundColor: '#fff',
     padding: 10,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10, // Space from the camera container
+    marginTop: 10,
   },
   iconTextRow: {
     flexDirection: 'row',
-    alignItems: 'center', // This will align the icon and text vertically
+    alignItems: 'center',
   },
   tipsText: {
-    color: '#f41c87', // Adjusted color to match the pink theme
+    color: '#f41c87',
     fontSize: 16,
     textAlign: 'center',
-    marginLeft: 5, // Add some spacing between the icon and the text
-    paddingHorizontal: 10, // Add horizontal padding to ensure text isn't too close to the edges
+    marginLeft: 5,
+    paddingHorizontal: 10,
   },
-  
 });
 
 export default QRScannerScreen;

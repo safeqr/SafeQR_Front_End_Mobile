@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     marginRight: screenWidth * 0.02,
-    color: '#ff69b4',
+    color: '#f41c87',
     fontSize: screenWidth * 0.035,
   },
   modalOverlay: {
