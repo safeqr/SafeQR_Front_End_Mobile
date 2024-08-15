@@ -298,7 +298,6 @@ const EmailScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Are you sure?</Text>
               <Text style={styles.modalText}>This will only delete the entry on the app and not the actual email.</Text>
               <View style={styles.modalButtons}>
@@ -315,7 +314,6 @@ const EmailScreen: React.FC = () => {
                   <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
                 </TouchableOpacity>
               </View>
-            </View>
           </View>
         </View>
       </Modal>
@@ -469,7 +467,7 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     marginRight: screenWidth * 0.02,
-    color: '#f41c87',
+    color: '#ff69b4',
     fontSize: screenWidth * 0.035,
   },
   modalOverlay: {
@@ -497,6 +495,7 @@ const styles = StyleSheet.create({
     marginBottom: screenHeight * 0.01,
   },
   modalText: {
+    color: '#ff69b4',
     fontSize: screenWidth * 0.04,
     marginBottom: screenHeight * 0.02,
     textAlign: 'center',

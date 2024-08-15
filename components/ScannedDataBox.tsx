@@ -293,13 +293,14 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       <Text style={[styles.resultText, { color: resultColor }]}>
         Result: {resultText}
       </Text>
-<Text style={styles.classificationText}>
-  Classification: {classification}
-</Text>
+
 
       {/* URL Type */}
       {type === 'URL' && (
         <>
+        <Text style={styles.classificationText}>
+  Classification: {classification}
+</Text>
           <View style={styles.mainContent}>
          {/* Left Container */}
   <View style={styles.leftContainer}>

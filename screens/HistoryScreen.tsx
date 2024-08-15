@@ -267,6 +267,7 @@ const styles = StyleSheet.create({
     marginBottom: screenHeight * 0.01,
   },
   modalText: {
+    color: '#ff69b4',
     fontSize: screenWidth * 0.04,
     marginBottom: screenHeight * 0.02,
     textAlign: 'center',
