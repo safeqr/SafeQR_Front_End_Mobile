@@ -8,6 +8,7 @@ import ScannedDataBox from '../components/ScannedDataBox';
 import { scanQRCode, getQRTips } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
 import NetInfo from '@react-native-community/netinfo';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -27,39 +28,40 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
 
-  // Fetch QR Tips and manage polling
-  useEffect(() => {
-    const fetchTips = async () => {
-      try {
-        const response = await getQRTips();
-        setQrTip(response.tips); // Set the qrTip state to the value of the tips property
-      } catch (error) {
-        console.error('Error fetching QR tips:', error);
-      }
-    };
+  const fetchTips = async () => {
+    try {
+      const response = await getQRTips();
+      setQrTip(response.tips); // Set the qrTip state to the value of the tips property
+    } catch (error) {
+      console.error('Error fetching QR tips:', error);
+    }
+  };
 
-    requestPermission(); // Request camera permission on component mount
+  // Only run when the screen is focusd
+  useFocusEffect(
+    React.useCallback(() => {
+      requestPermission(); // Request camera permission when screen is focused
 
-    // Initial fetch for QR tips
-    fetchTips();
+      // Initial fetch for QR tips
+      fetchTips();
 
-    // Set interval for fetching QR tips every 5 seconds
-    const intervalId = setInterval(fetchTips, 10000);
+      // Set interval for fetching QR tips every 6 seconds
+      const intervalId = setInterval(fetchTips, 6000);
 
-    // Subscribe to network state updates
-    const unsubscribe = NetInfo.addEventListener(state => {
-      setIsConnected(state.isConnected);
-      if (!state.isConnected) {
-        showBanner(); // Show banner if the device goes offline
-      }
-    });
+      // Subscribe to network state updates
+      const unsubscribe = NetInfo.addEventListener(state => {
+        setIsConnected(state.isConnected);
+        if (!state.isConnected) {
+          showBanner(); // Show banner if the device goes offline
+        }
+      });
 
-    // Cleanup on component unmount
-    return () => {
-      clearInterval(intervalId); // Clear interval
-      unsubscribe(); // Unsubscribe from network state updates
-    };
-  }, []);
+      return () => {
+        clearInterval(intervalId); // Clear interval when screen is unfocused
+        unsubscribe(); // Unsubscribe from network state updates
+      };
+    }, [])
+  );
 
   const showScannedDataBox = () => {
     setIsScannedDataBoxVisible(true);
@@ -79,6 +81,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       setIsScannedDataBoxVisible(false);
     });
   };
+
   const clearSelectedQrCodeData = () => {
     console.log("!!!!!clearSelectedQrCodeData");
     setQRCodeId(null);
@@ -86,7 +89,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
     setScanned(false); // Reset the scanned state so the camera can scan again
     clearScanData(); // Call the clearScanData passed from App.tsx
   };
-  
+
   // Show an offline banner
   const showBanner = () => {
     Animated.timing(bannerOpacity, {
@@ -112,7 +115,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
       const response = await scanQRCode(payload);
       const qrCodeId = response.qrcode.data.id;
       setQRCodeId(qrCodeId);
-        showScannedDataBox(); // Show the ScannedDataBox pop-up with animation
+      showScannedDataBox(); // Show the ScannedDataBox pop-up with animation
     } catch (error) {
       console.error("Error scanning QR code:", error);
     }
@@ -166,7 +169,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   if (!device) {
     return <Text>Loading camera...</Text>;
   }
-
   return (
     <View style={styles.container}>
       {/* Banner for network connectivity */}
@@ -299,7 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     alignSelf: 'center',
-    marginTop: '10%',
+    marginTop: '1%',
   },
   settingsButton: {
     position: 'absolute',
