@@ -148,6 +148,9 @@ const SettingsScreen: React.FC = () => {
     ]);
   };
 
+
+  const userName = userAttributes?.name || (userEmail ? userEmail.split('@')[0] : 'Unknown User');
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Settings</Text>
@@ -156,7 +159,7 @@ const SettingsScreen: React.FC = () => {
       <View style={styles.section}>
         <View style={styles.profileContainer}>
           <Ionicons name="person-circle" size={60} color="#f41c87" style={styles.profileIcon} />
-          <Text style={styles.userName}>Hello, {userAttributes?.name || 'Unknown User'}</Text>
+          <Text style={styles.userName}>Hello, {userName}</Text>
         </View>
         {userAttributes ? (
           <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>

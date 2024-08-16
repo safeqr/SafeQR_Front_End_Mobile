@@ -81,6 +81,9 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   const isShorteningService = details.shorteningService === 'Yes';
   const classification = details.classifications || 'Unknown';
 
+  // New state to check if the URL contains an IP address
+  const hasIpAddress = details.hasIpAddress || '';
+
   // Function to get security text and icon based on the URL description
   const getSecurityStatus = () => {
     if (data.info?.description === "Secure Uniform Resource Locator") {
@@ -249,6 +252,10 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
           {/* Conditionally display the shortening service message */}
           {isShorteningService && (
             <Text style={styles.shorteningServiceText}>This is a shortening service</Text>
+          )}
+          {/* Conditionally display the IP address message */}
+          {hasIpAddress && (
+            <Text style={styles.shorteningServiceText}>{hasIpAddress}</Text>
           )}
         </View>
       </View>
@@ -553,6 +560,7 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   // Row styles
