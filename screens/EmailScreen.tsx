@@ -22,20 +22,16 @@ const EmailScreen: React.FC = () => {
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [emptyMessage, setEmptyMessage] = useState('');
 
-  // Start scanning inbox only once when the component mounts
   useEffect(() => {
-    fetchUserEmail(); // Fetch user email before scanning inbox
+    fetchUserEmail();
   }, []);
 
-  // Function to fetch user email
   const fetchUserEmail = async () => {
     try {
-      console.log('fetchUserEmail triggered');
       const userInfo = await getUserInfo();
       if (userInfo && userInfo.email) {
         setUserEmail(userInfo.email);
 
-        // Check if the email is a Gmail account
         if (userInfo.email.endsWith('@gmail.com')) {
           startInboxScanning();
         } else {
@@ -47,18 +43,14 @@ const EmailScreen: React.FC = () => {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error fetching user email:', error);
       setEmptyMessage('Please login using a Gmail account to view Emails');
       setLoading(false);
     }
   };
 
-  // Function to initiate the email fetching process
   const startInboxScanning = async () => {
     setRescanLoading(true);
-
     try {
-      // Fetch the current authentication session
       const { tokens } = await fetchAuthSession();
       const idToken = tokens.idToken.toString();
 
@@ -71,33 +63,28 @@ const EmailScreen: React.FC = () => {
       const googleRefreshToken = parsedPayload["custom:refresh_token"];
 
       if (googleAccessToken && googleRefreshToken) {
-        // Use the fetched tokens to initiate email fetching
         await getEmails(googleAccessToken, googleRefreshToken);
         setRescanLoading(false);
       } else {
-        console.error('Google access token or refresh token not found in the payload');
         setError('Google access token or refresh token missing.');
         setRescanLoading(false);
       }
     } catch (error) {
-      console.error('Error initiating email fetch:', error);
       setError('Error rescanning inbox.');
       setRescanLoading(false);
     }
   };
 
-  // Function to poll for scanned emails
   const startPollingForScannedEmails = useCallback(() => {
     const pollingInterval = setInterval(async () => {
       try {
         const scannedEmails = await getScannedEmails();
         if (scannedEmails && scannedEmails.messages && scannedEmails.messages.length > 0) {
           setEmailData((prevEmailData) => {
-            // Preserve the selected message if it's still in the new list
             const selectedMessageExists = prevEmailData?.messages.some(
               (message) => message.messageId === selectedMessage?.messageId
             );
-  
+
             if (selectedMessageExists) {
               return {
                 ...scannedEmails,
@@ -116,17 +103,15 @@ const EmailScreen: React.FC = () => {
         }
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching scanned emails:', error);
         setEmptyMessage('No Emails with QR Code');
         setLoading(false);
       }
-    }, 10000); // Poll every 10 seconds
+    }, 10000);
     
-    return () => clearInterval(pollingInterval); // Cleanup the interval
+    return () => clearInterval(pollingInterval);
   }, [selectedMessage]);
 
   const handleSelectMessage = (message) => {
-    // Toggle selection of the message without affecting polling or scanning
     setSelectedMessage(selectedMessage === message ? null : message);
   };
 
@@ -135,18 +120,14 @@ const EmailScreen: React.FC = () => {
       const scannedEmails = await getScannedEmails();
       setEmailData(scannedEmails);
     } catch (error) {
-      console.error('Error refreshing scanned emails:', error);
       setError('Error refreshing emails.');
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      // Start polling for scanned emails when the screen gains focus
       const stopPolling = startPollingForScannedEmails();
-  
       return () => {
-        // Stop polling when the screen loses focus
         stopPolling();
       };
     }, [startPollingForScannedEmails])
@@ -159,14 +140,18 @@ const EmailScreen: React.FC = () => {
 
   const handleDeleteEmail = async (messageId: string) => {
     try {
-      await deleteEmail(messageId); // Call the API to delete the email
-      setEmailData((prevEmailData) => ({
-        ...prevEmailData,
-        messages: prevEmailData.messages.filter((message) => message.messageId !== messageId),
-      }));
-      console.log('Email deleted successfully');
+      await deleteEmail(messageId);
+      setEmailData((prevEmailData) => {
+        const updatedMessages = prevEmailData.messages.filter((message) => message.messageId !== messageId);
+        if (updatedMessages.length === 0) {
+          setEmptyMessage('No Emails with QR Code');
+        }
+        return {
+          ...prevEmailData,
+          messages: updatedMessages,
+        };
+      });
     } catch (error) {
-      console.error('Error deleting email:', error);
       Alert.alert('Error', 'Failed to delete email. Please try again.');
     }
   };
@@ -180,13 +165,21 @@ const EmailScreen: React.FC = () => {
     if (messageToDelete) {
       await handleDeleteEmail(messageToDelete);
       setIsDeleteModalVisible(false);
-      setMessageToDelete(null); // Clear the selected message after deletion
+      setMessageToDelete(null);
     }
   };
 
   return (
     <View style={styles.container}>
-      
+      {/* Header with Email and Refresh Button */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.emailHeader}>Email: {userEmail}</Text>
+        <TouchableOpacity onPress={refreshScannedEmails} style={styles.refreshButton}>
+          <Ionicons name="refresh" size={24} color="#ff69b4" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Loading and Empty Message */}
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ff69b4" />
@@ -200,47 +193,35 @@ const EmailScreen: React.FC = () => {
         </View>
       )}
 
+      {/* Email Data */}
       {emailData && (
-        <>
-          <View style={styles.headerContainer}>
-            <Text style={styles.emailHeader}>Email: {userEmail}</Text>
-            <TouchableOpacity onPress={refreshScannedEmails} style={styles.refreshButton}>
-              <Ionicons name="refresh" size={24} color="#ff69b4" />
+        <FlatList
+          data={emailData.messages}
+          keyExtractor={(item) => item.messageId}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => handleSelectMessage(item)} style={styles.messageContainer}>
+              <Text style={styles.subject}>{item.subject}</Text>
+              <Text style={styles.date}>{item.date}</Text>
+              {selectedMessage?.messageId === item.messageId && (
+                <View style={styles.emailListContainer}>
+                  <Text style={styles.qrCodeHeader}>Decoded QR Codes:</Text>
+                  {item.decodedContentsDetails?.map((details, index) => (
+                    <View key={index} style={styles.qrCodeContainer}>
+                      <TouchableOpacity onPress={() => handleUrlClick(details.data.id)}>
+                        <Text style={styles.qrCodeLink}>{details.data.contents}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <View style={styles.dividerHorizontal} />
+                  <TouchableOpacity onPress={() => handleDeletePress(item.messageId)} style={styles.deleteButtonContainer}>
+                    <Text style={styles.deleteButtonText}>Delete this entry</Text>
+                    <Ionicons name="trash-bin" size={24} color="#ff69b4" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </TouchableOpacity>
-          </View>
-          {rescanLoading && (
-            <View style={styles.rescanIndicator}>
-              <Text style={{ color: '#ff69b4' }}>Rescanning inbox...</Text>
-            </View>
           )}
-          <FlatList
-            data={emailData.messages}
-            keyExtractor={(item) => item.messageId}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => handleSelectMessage(item)} style={styles.messageContainer}>
-                <Text style={styles.subject}>{item.subject}</Text>
-                <Text style={styles.date}>{item.date}</Text>
-                {selectedMessage?.messageId === item.messageId && (
-                  <View style={styles.emailListContainer}>
-                    <Text style={styles.qrCodeHeader}>Decoded QR Codes:</Text>
-                    {item.decodedContentsDetails?.map((details, index) => (
-                      <View key={index} style={styles.qrCodeContainer}>
-                        <TouchableOpacity onPress={() => handleUrlClick(details.data.id)}>
-                          <Text style={styles.qrCodeLink}>{details.data.contents}</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                    <View style={styles.dividerHorizontal} />
-                    <TouchableOpacity onPress={() => handleDeletePress(item.messageId)} style={styles.deleteButtonContainer}>
-                      <Text style={styles.deleteButtonText}>Delete this entry</Text>
-                      <Ionicons name="trash-bin" size={24} color="#ff69b4" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </TouchableOpacity>
-            )}
-          />
-        </>
+        />
       )}
 
       {/* Modal for ScannedDataBox */}
@@ -250,13 +231,11 @@ const EmailScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setIsModalVisible(false)}
       >
-        {/* The greyspace outside, made clickable to close the modal */}
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPressOut={() => setIsModalVisible(false)}
         >
-          {/* Ensure ScannedDataBox does not render another modal */}
           <View style={styles.modalContainer}>
             <ScannedDataBox qrCodeId={selectedQrCodeId} clearScanData={() => setIsModalVisible(false)} />
           </View>
