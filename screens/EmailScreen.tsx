@@ -16,17 +16,15 @@ const EmailScreen: React.FC = () => {
   const [rescanLoading, setRescanLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userEmail, setUserEmail] = useState('');
-  const [bannerOpacity] = useState(new Animated.Value(0));
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedQrCodeId, setSelectedQrCodeId] = useState(null);
-  const [errorBannerOpacity] = useState(new Animated.Value(0));
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
+  const [emptyMessage, setEmptyMessage] = useState('');
 
   // Start scanning inbox only once when the component mounts
   useEffect(() => {
-    startInboxScanning(); 
-    fetchUserEmail();
+    fetchUserEmail(); // Fetch user email before scanning inbox
   }, []);
 
   // Function to fetch user email
@@ -34,17 +32,30 @@ const EmailScreen: React.FC = () => {
     try {
       console.log('fetchUserEmail triggered');
       const userInfo = await getUserInfo();
-      setUserEmail(userInfo.email);
+      if (userInfo && userInfo.email) {
+        setUserEmail(userInfo.email);
+
+        // Check if the email is a Gmail account
+        if (userInfo.email.endsWith('@gmail.com')) {
+          startInboxScanning();
+        } else {
+          setEmptyMessage('Please login using a Gmail account to view Emails');
+          setLoading(false);
+        }
+      } else {
+        setEmptyMessage('Please login using a Gmail account to view Emails');
+        setLoading(false);
+      }
     } catch (error) {
       console.error('Error fetching user email:', error);
-      setUserEmail('Error fetching email');
+      setEmptyMessage('Please login using a Gmail account to view Emails');
+      setLoading(false);
     }
   };
 
   // Function to initiate the email fetching process
   const startInboxScanning = async () => {
     setRescanLoading(true);
-    showBanner();
 
     try {
       // Fetch the current authentication session
@@ -75,51 +86,18 @@ const EmailScreen: React.FC = () => {
     }
   };
 
-  // Function to show the scan email in background banner
-  const showBanner = () => {
-    Animated.timing(bannerOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.timing(bannerOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }, 3000);
-    });
-  };
-
-  const showErrorBanner = () => {
-    Animated.timing(errorBannerOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.timing(errorBannerOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }, 3000);
-    });
-  };
-
   // Function to poll for scanned emails
   const startPollingForScannedEmails = useCallback(() => {
     const pollingInterval = setInterval(async () => {
       try {
         const scannedEmails = await getScannedEmails();
-        if (scannedEmails) {
+        if (scannedEmails && scannedEmails.messages && scannedEmails.messages.length > 0) {
           setEmailData((prevEmailData) => {
             // Preserve the selected message if it's still in the new list
             const selectedMessageExists = prevEmailData?.messages.some(
               (message) => message.messageId === selectedMessage?.messageId
             );
-
+  
             if (selectedMessageExists) {
               return {
                 ...scannedEmails,
@@ -133,16 +111,17 @@ const EmailScreen: React.FC = () => {
               return scannedEmails;
             }
           });
-          setLoading(false);
+        } else {
+          setEmptyMessage('No Emails with QR Code');
         }
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching scanned emails:', error);
-        setError('Error fetching emails.');
+        setEmptyMessage('No Emails with QR Code');
         setLoading(false);
-        showErrorBanner();
       }
     }, 10000); // Poll every 10 seconds
-
+    
     return () => clearInterval(pollingInterval); // Cleanup the interval
   }, [selectedMessage]);
 
@@ -207,17 +186,20 @@ const EmailScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ff69b4" />
           <Text style={{ color: '#ff69b4' }}>Fetching emails...</Text>
         </View>
       )}
-      {error && (
+
+      {!loading && emptyMessage && (
         <View style={styles.errorContainer}>
-          <Text style={{ color: '#ff69b4' }}>{error}</Text>
+          <Text style={styles.errorText}>{emptyMessage}</Text>
         </View>
       )}
+
       {emailData && (
         <>
           <View style={styles.headerContainer}>
@@ -261,14 +243,6 @@ const EmailScreen: React.FC = () => {
         </>
       )}
 
-      <Animated.View style={[styles.banner, { opacity: bannerOpacity }]} pointerEvents="none">
-        <Text style={styles.bannerText}>Scanning emails in the background. This may take a while...</Text>
-      </Animated.View>
-
-      <Animated.View style={[styles.errorBanner, { opacity: errorBannerOpacity }]} pointerEvents="none">
-        <Text style={styles.bannerText}>Error fetching scanned emails</Text>
-      </Animated.View>
-
       {/* Modal for ScannedDataBox */}
       <Modal
         visible={isModalVisible}
@@ -298,22 +272,22 @@ const EmailScreen: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Are you sure?</Text>
-              <Text style={styles.modalText}>This will only delete the entry on the app and not the actual email.</Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={styles.modalButton} 
-                  onPress={confirmDelete}
-                >
-                  <Text style={styles.modalButtonText}>Yes, Delete</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.modalButton} 
-                  onPress={() => setIsDeleteModalVisible(false)}
-                >
-                  <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
-                </TouchableOpacity>
-              </View>
+            <Text style={styles.modalTitle}>Are you sure?</Text>
+            <Text style={styles.modalText}>This will only delete the entry on the app and not the actual email.</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={confirmDelete}
+              >
+                <Text style={styles.modalButtonText}>Yes, Delete</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={() => setIsDeleteModalVisible(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: '#ff69b4' }]}>No, Keep It</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -415,61 +389,6 @@ const styles = StyleSheet.create({
     marginBottom: screenHeight * 0.01,
     marginTop: screenHeight * 0.015,
   },
-  banner: {
-    position: 'absolute',
-    top: screenHeight * 0.45, 
-    left: screenWidth * 0.1,  
-    right: screenWidth * 0.1,
-    backgroundColor: '#ff69b4',
-    paddingVertical: screenHeight * 0.02, 
-    paddingHorizontal: screenWidth * 0.05,
-    borderRadius: screenWidth * 0.05,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10, 
-  },
-  errorBanner: {
-    position: 'absolute',
-    top: screenHeight * 0.4,
-    left: screenWidth * 0.1,
-    right: screenWidth * 0.1,
-    backgroundColor: '#ff69b4',
-    paddingVertical: screenHeight * 0.02,
-    paddingHorizontal: screenWidth * 0.05,
-    borderRadius: screenWidth * 0.05,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  }, bannerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: screenWidth * 0.04,
-  },
-  
-  innerModalContainer: {
-    backgroundColor: '#ffe6f0',
-    padding: screenWidth * 0.05,
-    borderRadius: screenWidth * 0.03,
-    alignItems: 'center',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: screenWidth * 0.02,
-    right: screenWidth * 0.02,
-    zIndex: 1,
-  },
-  deleteButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: screenWidth * 0.02,
-  },
-  deleteButtonText: {
-    marginRight: screenWidth * 0.02,
-    color: '#ff69b4',
-    fontSize: screenWidth * 0.035,
-  },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -481,13 +400,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: screenWidth * 0.025,
     elevation: 5,
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: screenWidth * 0.025,
-    padding: screenWidth * 0.05,
-    alignItems: 'center',
   },
   modalTitle: {
     fontSize: screenWidth * 0.05,
@@ -513,6 +425,17 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: screenWidth * 0.04,
     color: '#000',
+  },
+  deleteButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: screenWidth * 0.02,
+  },
+  deleteButtonText: {
+    marginRight: screenWidth * 0.02,
+    color: '#ff69b4',
+    fontSize: screenWidth * 0.035,
   },
 });
 
