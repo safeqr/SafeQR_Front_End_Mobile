@@ -229,41 +229,53 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
   return (
     <View style={styles.dataBox}>
       <TouchableOpacity style={styles.closeButton} onPress={clearScanData}>
-        <Ionicons name="close-circle-outline" size={screenWidth * 0.05} color="#ff69b4" />
-      </TouchableOpacity>
+  <Ionicons name="close-circle-outline" size={screenWidth * 0.05} color="#ff69b4" />
+</TouchableOpacity>
 
-      {/* The Top Scan Icon with payload, truncated */}
-      <View style={[styles.row, styles.shadowBox]}>
-        <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
-        <Text style={styles.payload} onPress={() => setIsContentModalVisible(true)}>
-          {truncateContent(contents, 30)}
-        </Text>
-      </View>
+{/* The Top Scan Icon with payload, truncated */}
+<View style={[styles.row, styles.shadowBox]}>
+  <Image source={require('../assets/ScanIcon3.png')} style={styles.scan_icon} />
+  <Text style={styles.payload} onPress={() => setIsContentModalVisible(true)}>
+    {truncateContent(contents, 30)}
+  </Text>
+</View>
 
-      <View style={styles.mainContent}>
-        {/* Display QR Code, timestamp and Description */}
-        <View style={styles.qrSection}>
-          <QRCode value={contents || 'No Data'} size={screenWidth * 0.2} backgroundColor="transparent" />
-        </View>
-        <View style={styles.dividerVertical} />
-        <View style={styles.detailsSection}>
-          <Text style={styles.timestampText}>{data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Invalid Date'}</Text>
-          <Text style={styles.typeText}>Description: {description}</Text>
-          {/* Conditionally display the shortening service message */}
-          {isShorteningService && (
-            <Text style={styles.shorteningServiceText}>This is a shortening service</Text>
-          )}
-          {/* Conditionally display the IP address message */}
-          {hasIpAddress && (
-            <Text style={styles.shorteningServiceText}>{hasIpAddress}</Text>
-          )}
-        </View>
-      </View>
+<View style={styles.mainContent}>
+  {/* Display QR Code, timestamp and Description */}
+  <View style={styles.qrSection}>
+    <QRCode value={contents || 'No Data'} size={screenWidth * 0.2} backgroundColor="transparent" />
+  </View>
+  <View style={styles.dividerVertical} />
+  <View style={styles.detailsSection}>
+  <Text style={styles.timestampText}>{data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Invalid Date'}</Text>
+  <Text style={styles.typeText}>Description: {description}</Text>
+  
+ 
+</View>
+</View>
+ {/* Conditionally display the shortening service message */}
+ {isShorteningService && (
+    <Text style={styles.remarksText}>This is a shortening service</Text>
+  )}
+  
+  {/* Conditionally display the IP address message */}
+  {hasIpAddress && (
+    <Text style={styles.remarksText}>{hasIpAddress}</Text>
+  )}
+  
+  {/* Conditionally display the remarks message */}
+  {details.remarks && (
+    <Text style={styles.remarksText}>{details.remarks}</Text>
+  )}
 
-      {/* The Main Result in appropriate color */}
-      <Text style={[styles.resultText, { color: resultColor }]}>
-        Result: {resultText}
-      </Text>
+  {/* Conditionally display the keywordDetected message */}
+  {details.keywordDetected && (
+    <Text style={styles.remarksText}>{details.keywordDetected}</Text>
+  )}
+{/* The Main Result in appropriate color */}
+<Text style={[styles.resultText, { color: resultColor }]}>
+  Result: {resultText}
+</Text>
 
       {/* URL Type */}
       {type === 'URL' && (
@@ -434,15 +446,19 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
         </>
       )}
 
-      {type === 'PHONE Nume' && (
-        <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+{type === 'PHONE' && (
+        
+  <TouchableOpacity style={styles.iconButton} onPress={() => Linking.openURL(contents)}>
+          
           <View style={styles.dividerHorizontal} />
           <Ionicons name="call-outline" size={screenWidth * 0.045} color="#2196F3" />
+          
           {/* Divider */}
 
-          <Text style={styles.iconText}>Call Number</Text>
+          <Text style={styles.iconText}>Call {details.phone}</Text>
         </TouchableOpacity>
       )}
+
 
       {type === 'SMS' && (
         <TouchableOpacity
@@ -471,24 +487,25 @@ const ScannedDataBox: React.FC<ScannedDataBoxProps> = ({ qrCodeId, clearScanData
       )}
 
       {/* Full Content Modal */}
-      <Modal
-        visible={isContentModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsContentModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Full Content</Text>
-            <ScrollView style={styles.modalScrollContent}>
-              <Text style={styles.modalText}>{contents}</Text>
-            </ScrollView>
-            <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsContentModalVisible(false)}>
-              <Text style={styles.closeModalButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+<Modal
+  visible={isContentModalVisible}
+  transparent={true}
+  animationType="fade"
+  onRequestClose={() => setIsContentModalVisible(false)}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Full Content</Text>
+      <ScrollView style={styles.fullContentScroll}>
+        <Text style={styles.fullContentText}>{contents}</Text>
+      </ScrollView>
+      <TouchableOpacity style={styles.closeModalButton} onPress={() => setIsContentModalVisible(false)}>
+        <Text style={styles.closeModalButtonText}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
 
       {/* POP UP Security Header and Redirect button */}
       {/* Security Headers Modal */}
@@ -652,7 +669,6 @@ const styles = StyleSheet.create({
   },
 
   // Display check styles
-  // Aligning the boxes
   displayCheck: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -724,7 +740,7 @@ const styles = StyleSheet.create({
   },
 
   horizontalContentContainer: {
-    flexGrow: 1, // Ensure the content container expands to fit its children
+    flexGrow: 1, //  content container expands to fit its children
   },
 
   // Close modal button styles
@@ -805,9 +821,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   shorteningServiceText: {
-    fontSize: screenWidth * 0.03, // Adjust size as needed
-    color: '#ff6347', // Example color (Tomato)
-    marginTop: screenWidth * 0.02, // Adjust spacing as needed
+    fontSize: screenWidth * 0.03,   
+    color: '#ff6347', 
+    marginTop: screenWidth * 0.02,  
   },
 
   // Vertical divider styles
@@ -855,11 +871,32 @@ const styles = StyleSheet.create({
   },
 
   classificationText: {
-    fontSize: screenWidth * 0.0375, // Adjust size to be consistent with other text
+    fontSize: screenWidth * 0.0375, 
     color: '#000', // Black color for contrast
     textAlign: 'center',
     marginTop: screenWidth * 0.01875, // Add some spacing above
   },
+  remarksText: {
+    fontSize: screenWidth * 0.03,   
+    color: '#ff6347', 
+    textAlign: 'center',
+    marginTop: screenWidth * 0.02,  
+    marginBottom: screenWidth * 0.1,  // Add marginBottom for spacing below the remarks
+  },
+  // Modal scroll content styles for full content
+  fullContentScroll: {
+    maxHeight: screenHeight * 0.6, // Adjust height as needed
+    marginVertical: screenHeight * 0.02,
+  },
+
+  // Full content text styles
+  fullContentText: {
+    fontSize: screenWidth * 0.0375,
+    color: '#000', // Black text color
+    textAlign: 'left', // Ensure the text aligns properly
+    flexWrap: 'wrap', // Ensure the text wraps
+  },
+  
 });
 
 export default ScannedDataBox;
