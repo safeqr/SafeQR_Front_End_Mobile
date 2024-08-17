@@ -9,6 +9,7 @@ import { scanQRCode, getQRTips } from '../api/qrCodeAPI';
 import SettingsScreen from './SettingsScreen';
 import NetInfo from '@react-native-community/netinfo';
 import { useFocusEffect } from '@react-navigation/native';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -27,6 +28,25 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   // Camera permissions and device management
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
+
+  useEffect(() => {
+    const fetchAuthData = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        console.log('Current user:', currentUser);
+        
+        const { tokens } = await fetchAuthSession();
+        const test = await fetchAuthSession();
+        console.log('Tokens:', tokens);
+        console.log("AWS access token: ", tokens.accessToken.toString());
+        console.log("Test data: ", test);
+      } catch (error) {
+        console.error('Error fetching auth data:', error);
+      }
+    };
+
+    fetchAuthData();
+  }, []);
 
   const fetchTips = async () => {
     try {
@@ -83,7 +103,6 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   };
 
   const clearSelectedQrCodeData = () => {
-    console.log("!!!!!clearSelectedQrCodeData");
     setQRCodeId(null);
     hideScannedDataBox();
     setScanned(false); // Reset the scanned state so the camera can scan again
@@ -169,6 +188,7 @@ const QRScannerScreen: React.FC<{ clearScanData: () => void }> = ({ clearScanDat
   if (!device) {
     return <Text>Loading camera...</Text>;
   }
+
   return (
     <View style={styles.container}>
       {/* Banner for network connectivity */}
