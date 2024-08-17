@@ -21,6 +21,8 @@ const EmailScreen: React.FC = () => {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [emptyMessage, setEmptyMessage] = useState('');
+  const [bannerOpacity] = useState(new Animated.Value(0));
+
 
   useEffect(() => {
     fetchUserEmail();
@@ -50,18 +52,20 @@ const EmailScreen: React.FC = () => {
 
   const startInboxScanning = async () => {
     setRescanLoading(true);
+    showBanner(); // Show the scanning banner
+  
     try {
       const { tokens } = await fetchAuthSession();
       const idToken = tokens.idToken.toString();
-
+  
       const parts = idToken.split('.');
       const payload = parts[1];
       const decodedPayload = Buffer.from(payload, 'base64').toString('utf8');
       const parsedPayload = JSON.parse(decodedPayload);
-
+  
       const googleAccessToken = parsedPayload["custom:access_token"];
       const googleRefreshToken = parsedPayload["custom:refresh_token"];
-
+  
       if (googleAccessToken && googleRefreshToken) {
         await getEmails(googleAccessToken, googleRefreshToken);
         setRescanLoading(false);
@@ -74,6 +78,7 @@ const EmailScreen: React.FC = () => {
       setRescanLoading(false);
     }
   };
+  
 
   const startPollingForScannedEmails = useCallback(() => {
     const pollingInterval = setInterval(async () => {
@@ -169,6 +174,23 @@ const EmailScreen: React.FC = () => {
     }
   };
 
+  const showBanner = () => {
+    Animated.timing(bannerOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(bannerOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, 3000);
+    });
+  };
+  
+
   return (
     <View style={styles.container}>
       {/* Header with Email and Refresh Button */}
@@ -224,6 +246,13 @@ const EmailScreen: React.FC = () => {
         />
       )}
 
+
+      {/* Banner when scanning inbox */}
+      <Animated.View style={[styles.banner, { opacity: bannerOpacity }]} pointerEvents="none">
+        <Text style={styles.bannerText}>Scanning emails in the background. This may take a while...</Text>
+      </Animated.View>
+
+
       {/* Modal for ScannedDataBox */}
       <Modal
         visible={isModalVisible}
@@ -275,6 +304,25 @@ const EmailScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  banner: {
+    position: 'absolute',
+    top: screenHeight * 0.50, 
+    left: screenWidth * 0.1,  
+    right: screenWidth * 0.1,
+    backgroundColor: '#ff69b4',
+    paddingVertical: screenHeight * 0.02, 
+    paddingHorizontal: screenWidth * 0.05,
+    borderRadius: screenWidth * 0.05,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10, 
+  },
+  bannerText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: screenWidth * 0.04,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8f0fc',
