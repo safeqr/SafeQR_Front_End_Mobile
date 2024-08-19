@@ -34,18 +34,18 @@ const EmailScreen: React.FC = () => {
       if (userInfo && userInfo.email) {
         setUserEmail(userInfo.email);
 
-        if (userInfo.email.endsWith('@gmail.com')) {
+        if (userInfo.source === 'Google') {
           startInboxScanning();
         } else {
-          setEmptyMessage('Please login using a Gmail account to view Emails');
+          setEmptyMessage('Please Sign in with Google to scan your Gmails for QR Codes');
           setLoading(false);
         }
       } else {
-        setEmptyMessage('Please login using a Gmail account to view Emails');
+        setEmptyMessage('Please Sign in with Google to scan your Gmails for QR Codes');
         setLoading(false);
       }
     } catch (error) {
-      setEmptyMessage('Please login using a Gmail account to view Emails');
+      setEmptyMessage('Please Sign in with Google to scan your Gmails for QR Codes');
       setLoading(false);
     }
   };
@@ -370,6 +370,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ff69b4',
     fontSize: screenWidth * 0.04,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   rescanIndicator: {
     justifyContent: 'center',
