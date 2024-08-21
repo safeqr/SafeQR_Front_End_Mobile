@@ -16,7 +16,7 @@ const handleSignInWithRedirect = async () => {
   try {
     await signInWithRedirect();
   } catch (error) {
-    console.error('Error during sign in:', error);
+    console.log('Error during sign in:', error);
   }
 };
 
@@ -24,14 +24,18 @@ const SettingsScreen: React.FC = () => {
   const { userAttributes } = useFetchUserAttributes();
   const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userSource, setUserSource] = useState<string | null>(null);
 
   const fetchUserEmail = async () => {
     try {
       console.log('fetchUserEmail triggered');
       const userInfo = await getUserInfo();
+      console.log("User Source: ", userInfo.source);
+      
+      setUserSource(userInfo.source)
       setUserEmail(userInfo.email); // Assuming userInfo has an email property
     } catch (error) {
-      console.error('Error fetching user email:', error);
+      console.log('Error fetching user email:', error);
     }
   };
 
@@ -64,8 +68,8 @@ const SettingsScreen: React.FC = () => {
           try {
             parsedPayload = JSON.parse(decodedPayload);
           } catch (parseError) {
-            console.error('Error parsing payload:', parseError);
-            console.error(`Parse error: ${parseError.message}\nPayload: ${decodedPayload}`);
+            console.log('Error parsing payload:', parseError);
+            console.log(`Parse error: ${parseError.message}\nPayload: ${decodedPayload}`);
             return;
           }
           
@@ -92,13 +96,13 @@ const SettingsScreen: React.FC = () => {
             console.log("date created: ", new Date(1721715837500).toLocaleString('en-US', options));
 
           } else {
-            console.error('No Google access token found in the payload');
+            console.log('No Google access token found in the payload');
           }
         } else {
-          console.error('No ID token found in the session');
+          console.log('No ID token found in the session');
         }
       } catch (error) {
-        console.error('Error getting Google access token:', error);
+        console.log('Error getting Google access token:', error);
       }
     };
 
@@ -176,19 +180,23 @@ const SettingsScreen: React.FC = () => {
   
       <View style={styles.divider} />
   
-      {/* Email Section */}
-      <View style={styles.section}>
-        <View style={styles.emailRow}>
-          <Text style={styles.sectionTitle}>Email: </Text>
-          <Text style={styles.userEmail}>{userEmail || 'Loading...'}</Text>
-        </View>
-        <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllEmails}>
-          <Ionicons name="trash-outline" size={24} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.deleteAllButtonText}>Delete All Email</Text>
-        </TouchableOpacity>
-      </View>
-  
-      <View style={styles.divider} />
+      {/* Email Section - Only show when userSource is "Google" */}
+      {userSource === "Google" && (
+        <>
+          <View style={styles.section}>
+            <View style={styles.emailRow}>
+              <Text style={styles.sectionTitle}>Email: </Text>
+              <Text style={styles.userEmail}>{userEmail || 'Loading...'}</Text>
+            </View>
+            <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllEmails}>
+              <Ionicons name="trash-outline" size={24} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.deleteAllButtonText}>Delete All Email</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
   
       {/* History & Bookmarks Section */}
       <View style={styles.section}>
